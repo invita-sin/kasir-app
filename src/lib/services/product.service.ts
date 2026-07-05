@@ -22,13 +22,14 @@ export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 
 export const ProductService = {
-  async list(params: { search?: string; page?: number; limit?: number; all?: boolean; cabangId: string }) {
+  async list(params: { search?: string; page?: number; limit?: number; all?: boolean; cabangId?: string | null }) {
     const { search, all, cabangId } = params;
     const page = all ? 1 : Math.max(1, params.page || 1);
     const limit = all ? 9999 : Math.min(Math.max(1, params.limit || 50), 100);
     const skip = all ? 0 : (page - 1) * limit;
 
-    const where: Record<string, unknown> = { cabangId };
+    const where: Record<string, unknown> = {};
+    if (cabangId) where.cabangId = cabangId;
     if (search) {
       where.OR = [{ name: { contains: search } }, { sku: { contains: search } }];
     }

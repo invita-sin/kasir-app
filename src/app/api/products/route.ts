@@ -16,13 +16,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
     }
     const cabangId = user.cabangId;
-    if (!cabangId) {
-      return NextResponse.json({ error: "SUPER_ADMIN tidak memiliki cabang", code: "BAD_REQUEST" }, { status: 400 });
-    }
 
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || undefined;
-    const all = searchParams.get("all") === "true";
+    const all = searchParams.get("all") === "true" || !cabangId;
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
     const limit = Math.max(1, parseInt(searchParams.get("limit") || "50", 10) || 50);
 
