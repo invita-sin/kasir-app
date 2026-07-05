@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AuthService } from "@/lib/services/auth.service";
-import { requireAdmin } from "@/lib/middleware-helpers";
+import { getUser } from "@/lib/get-user";
 import { handleApiError } from "@/lib/errors";
 import { logger, generateRequestId } from "@/lib/logger";
 import { httpRequestsTotal, httpRequestDurationSeconds } from "@/lib/metrics";
@@ -13,8 +13,8 @@ export async function GET(
   const requestId = generateRequestId();
   const start = Date.now();
   try {
-    const user = await requireAdmin(req);
-    if (!user) {
+    const user = await getUser(req);
+    if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
       httpRequestsTotal.inc({ method: "GET", path: "/api/users/[id]", status: 401 });
       httpRequestDurationSeconds.observe({ method: "GET", path: "/api/users/[id]" }, (Date.now() - start) / 1000);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -41,8 +41,8 @@ export async function PUT(
   const requestId = generateRequestId();
   const start = Date.now();
   try {
-    const user = await requireAdmin(req);
-    if (!user) {
+    const user = await getUser(req);
+    if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
       httpRequestsTotal.inc({ method: "PUT", path: "/api/users/[id]", status: 401 });
       httpRequestDurationSeconds.observe({ method: "PUT", path: "/api/users/[id]" }, (Date.now() - start) / 1000);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -50,7 +50,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await parseJsonBody(req);
-    const result = await AuthService.updateUser(id, body);
+    const result = await AuthService.updateUser(id, body, user.role);
 
     logger.info({ event: "user.updated", requestId, id });
 
@@ -73,8 +73,8 @@ export async function DELETE(
   const requestId = generateRequestId();
   const start = Date.now();
   try {
-    const user = await requireAdmin(req);
-    if (!user) {
+    const user = await getUser(req);
+    if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
       httpRequestsTotal.inc({ method: "DELETE", path: "/api/users/[id]", status: 401 });
       httpRequestDurationSeconds.observe({ method: "DELETE", path: "/api/users/[id]" }, (Date.now() - start) / 1000);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

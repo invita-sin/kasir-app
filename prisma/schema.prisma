@@ -8,8 +8,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Cabang {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  phone     String?
+  appName   String   @default("Kasir App")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+  products  Product[]
+}
+
 model User {
   id           String   @id @default(cuid())
+  cabangId     String?
+  cabang       Cabang?  @relation(fields: [cabangId], references: [id])
   username     String   @unique
   password     String
   name         String
@@ -21,8 +35,10 @@ model User {
 
 model Product {
   id          String   @id @default(cuid())
+  cabangId    String
+  cabang      Cabang   @relation(fields: [cabangId], references: [id])
   name        String
-  sku         String   @unique
+  sku         String
   description String?
   price       Float
   stock       Int      @default(0)
@@ -32,12 +48,14 @@ model Product {
   stockIn     StockIn[]
   stockOut    StockOut[]
   saleItems   SaleItem[]
+
+  @@unique([cabangId, sku])
 }
 
 model StockIn {
   id        String   @id @default(cuid())
   productId String
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity  Int
   note      String?
   createdAt DateTime @default(now())
@@ -46,7 +64,7 @@ model StockIn {
 model StockOut {
   id        String   @id @default(cuid())
   productId String
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity  Int
   note      String?
   createdAt DateTime @default(now())
@@ -62,7 +80,7 @@ model Sale {
 model SaleItem {
   id        String  @id @default(cuid())
   saleId    String
-  sale      Sale    @relation(fields: [saleId], references: [id])
+  sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
   productId String
   product   Product @relation(fields: [productId], references: [id])
   quantity  Int

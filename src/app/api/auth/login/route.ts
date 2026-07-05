@@ -22,11 +22,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await parseJsonBody(req);
-    const { token, refreshToken, username, name, role } = await AuthService.login(body);
+    const result = await AuthService.login(body);
 
-    logger.info({ event: "auth.login.success", requestId, username, role });
+    logger.info({ event: "auth.login.success", requestId, username: result.username, role: result.role });
 
-    const response = NextResponse.json({ success: true, username, name, role });
+    const response = NextResponse.json({
+      success: true,
+      username: result.username,
+      name: result.name,
+      role: result.role,
+      cabang: result.cabang,
+    });
     const cookieOpts = {
       httpOnly: true,
       secure: config.NODE_ENV === "production",
@@ -35,8 +41,8 @@ export async function POST(req: NextRequest) {
       maxAge: config.JWT_EXPIRY_HOURS * 60 * 60,
     };
     const refreshCookieOpts = { ...cookieOpts, maxAge: config.JWT_REFRESH_EXPIRY_DAYS * 24 * 60 * 60 };
-    response.cookies.set("token", token, cookieOpts);
-    response.cookies.set("refreshToken", refreshToken, refreshCookieOpts);
+    response.cookies.set("token", result.token, cookieOpts);
+    response.cookies.set("refreshToken", result.refreshToken, refreshCookieOpts);
 
     httpRequestsTotal.inc({ method: "POST", path: "/api/auth/login", status: 200 });
     httpRequestDurationSeconds.observe({ method: "POST", path: "/api/auth/login" }, (Date.now() - start) / 1000);

@@ -4,10 +4,10 @@ import { config as appConfig } from "@/lib/config";
 
 const publicPaths = ["/login", "/api/auth/login", "/api/auth/refresh", "/api/health"];
 
-const kasirAllowedPagePaths = ["/transactions"];
+const adminAllowedPagePaths = ["/transactions"];
 
-function isKasirAllowedPage(pathname: string): boolean {
-  return kasirAllowedPagePaths.some(
+function isAdminAllowedPage(pathname: string): boolean {
+  return adminAllowedPagePaths.some(
     (p) => pathname === p || pathname.startsWith(p + "/")
   );
 }
@@ -67,7 +67,7 @@ export async function middleware(req: NextRequest) {
     return addSecurityHeaders(NextResponse.redirect(new URL("/login", req.url)));
   }
 
-  if (payload.role !== "ADMIN" && !pathname.startsWith("/api/") && !isKasirAllowedPage(pathname)) {
+  if (payload.role !== "SUPER_ADMIN" && payload.role !== "ADMIN" && !pathname.startsWith("/api/") && !isAdminAllowedPage(pathname)) {
     return addSecurityHeaders(NextResponse.redirect(new URL("/transactions", req.url)));
   }
 

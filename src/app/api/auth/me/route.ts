@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AuthService } from "@/lib/services/auth.service";
+import { prisma } from "@/lib/prisma";
 import { logger, generateRequestId } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
@@ -15,6 +16,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
   }
 
+  let cabang = null;
+  if (payload.cabangId) {
+    cabang = await prisma.cabang.findUnique({
+      where: { id: payload.cabangId },
+      select: { id: true, name: true, appName: true, address: true, phone: true },
+    });
+  }
+
   logger.debug({ event: "auth.me", requestId, userId: payload.userId });
 
   return NextResponse.json({
@@ -22,5 +31,7 @@ export async function GET(req: NextRequest) {
     username: payload.username,
     name: payload.name,
     role: payload.role,
+    cabangId: payload.cabangId,
+    cabang,
   });
 }

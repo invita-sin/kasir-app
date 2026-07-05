@@ -41,15 +41,37 @@ async function main() {
   if (!process.env.ADMIN_USERNAME) throw new Error("ADMIN_USERNAME is required");
   if (!process.env.KASIR_PASSWORD) throw new Error("KASIR_PASSWORD is required");
 
-  const adminPassword = await hashPassword(process.env.ADMIN_PASSWORD);
+  const superAdminPassword = await hashPassword(process.env.ADMIN_PASSWORD);
+  const adminPassword = process.env.ADMIN_CABANG_PASSWORD
+    ? await hashPassword(process.env.ADMIN_CABANG_PASSWORD)
+    : await hashPassword(process.env.ADMIN_PASSWORD);
   const kasirPassword = await hashPassword(process.env.KASIR_PASSWORD);
+
+  const cabang = await prisma.cabang.create({
+    data: {
+      name: "Cabang Utama",
+      address: "Jl. Contoh No. 123",
+      phone: "0812-3456-7890",
+      appName: "Kasir App",
+    },
+  });
 
   await prisma.user.create({
     data: {
       username: process.env.ADMIN_USERNAME,
+      password: superAdminPassword,
+      name: "Super Administrator",
+      role: "SUPER_ADMIN",
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      username: "admin_cabang",
       password: adminPassword,
-      name: "Administrator",
+      name: "Admin Cabang",
       role: "ADMIN",
+      cabangId: cabang.id,
     },
   });
 
@@ -59,14 +81,15 @@ async function main() {
       password: kasirPassword,
       name: "Kasir Toko",
       role: "KASIR",
+      cabangId: cabang.id,
     },
   });
 
   for (const product of products) {
-    await prisma.product.create({ data: product });
+    await prisma.product.create({ data: { ...product, cabangId: cabang.id } });
   }
 
-  console.log("Seed berhasil!");
+  console.log("Seed berhasil! SUPER_ADMIN, ADMIN, KASIR + 1 cabang + 12 produk dibuat.");
 }
 
 main()

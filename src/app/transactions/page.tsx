@@ -28,6 +28,13 @@ export default function Cashier() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [lastSale, setLastSale] = useState<{ id: string; total: number; items: CartItem[] } | null>(null);
+  const [cabang, setCabang] = useState<{ name: string; appName: string; address?: string; phone?: string } | null>(null);
+
+  useEffect(() => {
+    apiGet<{ cabang: { name: string; appName: string; address?: string; phone?: string } | null }>("/api/auth/me")
+      .then((d) => setCabang(d.cabang))
+      .catch(() => {});
+  }, []);
 
   const fetchProducts = useCallback(async () => {
     const params = new URLSearchParams({ all: "true" });
@@ -163,9 +170,9 @@ export default function Cashier() {
         <div className="receipt-wrapper max-w-sm mx-auto mt-8">
           <div className="receipt-card bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="text-center mb-4">
-              <h2 className="font-bold text-lg">OUTLET MALAKA</h2>
-              <p className="text-xs text-gray-500">Jl. Contoh No. 123, Kota</p>
-              <p className="text-xs text-gray-500">Telp: 0812-3456-7890</p>
+              <h2 className="font-bold text-lg">{cabang?.appName || "Kasir App"}</h2>
+              <p className="text-xs text-gray-500">{cabang?.address || cabang?.name || "Outlet"}</p>
+              {cabang?.phone && <p className="text-xs text-gray-500">Telp: {cabang.phone}</p>}
             </div>
 
             <div className="border-t border-dashed border-gray-300 pt-2 mb-3 text-xs text-gray-600">
@@ -174,7 +181,7 @@ export default function Cashier() {
                 <span>{new Date().toLocaleString("id-ID")}</span>
               </div>
               <div className="flex justify-between mt-0.5">
-                <span>Kasir: Admin</span>
+                <span>{cabang?.name || "Outlet"}</span>
                 <span>{itemCount} item</span>
               </div>
             </div>

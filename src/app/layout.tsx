@@ -21,6 +21,17 @@ import toast from "react-hot-toast";
 import { apiGet, apiPost } from "@/lib/api-client";
 import "./globals.css";
 
+const superAdminNavItems = [
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/products", label: "Produk", icon: Package },
+  { href: "/stock-in", label: "Stok Masuk", icon: ArrowDownToLine },
+  { href: "/stock-out", label: "Stok Keluar", icon: ArrowUpFromLine },
+  { href: "/transactions", label: "Kasir", icon: ShoppingCart },
+  { href: "/transactions/history", label: "Riwayat", icon: History },
+  { href: "/cabang", label: "Cabang", icon: Store },
+  { href: "/users", label: "Pengguna", icon: Users },
+];
+
 const adminNavItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/products", label: "Produk", icon: Package },
@@ -43,9 +54,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const router = useRouter();
 
+  const [cabang, setCabang] = useState<{ name: string; appName: string; address?: string; phone?: string } | null>(null);
+
   useEffect(() => {
-    apiGet<{ id: string; username: string; name: string; role: string }>("/api/auth/me")
-      .then((d) => { setUsername(d.name || d.username); setRole(d.role); })
+    apiGet<{ id: string; username: string; name: string; role: string; cabang: { name: string; appName: string; address?: string; phone?: string } | null }>("/api/auth/me")
+      .then((d) => { setUsername(d.name || d.username); setRole(d.role); setCabang(d.cabang); })
       .catch(() => {});
   }, []);
 
@@ -70,7 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
-  const allNavItems = role === "ADMIN" ? adminNavItems : kasirNavItems;
+  const allNavItems = role === "SUPER_ADMIN" ? superAdminNavItems : role === "ADMIN" ? adminNavItems : kasirNavItems;
 
   return (
     <html lang="id">
@@ -84,7 +97,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           >
             <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-200">
               <Store className="w-6 h-6 text-blue-600" />
-              <span className="font-bold text-lg">Kasir Malaka</span>
+              <span className="font-bold text-lg">{cabang?.appName || "Kasir App"}</span>
             </div>
             <nav className="p-4 space-y-1">
               {allNavItems.map((item) => {
@@ -135,13 +148,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="ml-auto flex items-center gap-2 text-sm text-gray-500">
                 <User className="w-4 h-4" />
                 <span>{username || "User"}</span>
-                {role && (
-                  <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${
-                    role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-green-100 text-green-700"
-                  }`}>
-                    {role}
-                  </span>
-                )}
+                  {role && (
+                    <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${
+                      role === "SUPER_ADMIN" ? "bg-red-100 text-red-700" : role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-green-100 text-green-700"
+                    }`}>
+                      {role === "SUPER_ADMIN" ? "SUPER ADMIN" : role}
+                    </span>
+                  )}
               </div>
             </header>
             <main className="flex-1 overflow-auto p-4 lg:p-6">{children}</main>

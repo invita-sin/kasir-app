@@ -1,20 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ProductService } from "@/lib/services/product.service";
-import { requireAdmin } from "@/lib/middleware-helpers";
+import { getUser } from "@/lib/get-user";
 import { handleApiError } from "@/lib/errors";
 import { logger, generateRequestId } from "@/lib/logger";
 import { httpRequestsTotal, httpRequestDurationSeconds } from "@/lib/metrics";
 import { parseJsonBody } from "@/lib/request";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const requestId = generateRequestId();
   const start = Date.now();
   try {
+    const user = await getUser(req);
+    if (!user || !user.cabangId) {
+      return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
+    }
+
     const { id } = await params;
-    const product = await ProductService.getById(id);
+    const product = await ProductService.getById(id, user.cabangId);
 
     const response = NextResponse.json(product);
     httpRequestsTotal.inc({ method: "GET", path: "/api/products/[id]", status: response.status });
@@ -35,16 +40,17 @@ export async function PUT(
   const requestId = generateRequestId();
   const start = Date.now();
   try {
-    const admin = await requireAdmin(req);
-    if (!admin) {
-      httpRequestsTotal.inc({ method: "PUT", path: "/api/products/[id]", status: 403 });
-      httpRequestDurationSeconds.observe({ method: "PUT", path: "/api/products/[id]" }, (Date.now() - start) / 1000);
+    const user = await getUser(req);
+    if (!user || !user.cabangId) {
+      return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
+    }
+    if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
       return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
     }
 
     const { id } = await params;
     const body = await parseJsonBody(req);
-    const product = await ProductService.update(id, body);
+    const product = await ProductService.update(id, body, user.cabangId);
 
     logger.info({ event: "product.updated", requestId, id: product.id, sku: product.sku });
 
@@ -67,15 +73,16 @@ export async function DELETE(
   const requestId = generateRequestId();
   const start = Date.now();
   try {
-    const admin = await requireAdmin(req);
-    if (!admin) {
-      httpRequestsTotal.inc({ method: "DELETE", path: "/api/products/[id]", status: 403 });
-      httpRequestDurationSeconds.observe({ method: "DELETE", path: "/api/products/[id]" }, (Date.now() - start) / 1000);
+    const user = await getUser(req);
+    if (!user || !user.cabangId) {
+      return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
+    }
+    if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
       return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
     }
 
     const { id } = await params;
-    const result = await ProductService.delete(id);
+    const result = await ProductService.delete(id, user.cabangId);
 
     logger.info({ event: "product.deleted", requestId, id });
 

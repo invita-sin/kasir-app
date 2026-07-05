@@ -22,41 +22,43 @@ export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 
 export const ProductService = {
-  async list(params: { search?: string; page?: number; limit?: number; all?: boolean }) {
-    const { search, all } = params;
+  async list(params: { search?: string; page?: number; limit?: number; all?: boolean; cabangId: string }) {
+    const { search, all, cabangId } = params;
     const page = all ? 1 : Math.max(1, params.page || 1);
     const limit = all ? 9999 : Math.min(Math.max(1, params.limit || 50), 100);
     const skip = all ? 0 : (page - 1) * limit;
 
-    const where = search
-      ? { OR: [{ name: { contains: search } }, { sku: { contains: search } }] }
-      : undefined;
+    const where: Record<string, unknown> = { cabangId };
+    if (search) {
+      where.OR = [{ name: { contains: search } }, { sku: { contains: search } }];
+    }
 
     const [data, total] = await prisma.$transaction([
       prisma.product.findMany({
-        where,
+        where: where as any,
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
-      prisma.product.count({ where }),
+      prisma.product.count({ where: where as any }),
     ]);
 
     if (all) return data;
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
-  async getById(id: string) {
+  async getById(id: string, cabangId: string) {
     const product = await prisma.product.findUnique({ where: { id } });
     if (!product) throw new NotFoundError("Produk");
+    if (product.cabangId !== cabangId) throw new NotFoundError("Produk");
     return product;
   },
 
-  async create(body: unknown) {
+  async create(body: unknown, cabangId: string) {
     const input = createProductSchema.parse(body);
 
-    const existing = await prisma.product.findUnique({ where: { sku: input.sku } });
-    if (existing) throw new ConflictError(`SKU "${input.sku}" sudah digunakan`);
+    const existing = await prisma.product.findUnique({ where: { cabangId_sku: { cabangId, sku: input.sku } } });
+    if (existing) throw new ConflictError(`SKU "${input.sku}" sudah digunakan di cabang ini`);
 
     return prisma.product.create({
       data: {
@@ -65,19 +67,21 @@ export const ProductService = {
         price: input.price,
         description: input.description ?? null,
         minStock: input.minStock,
+        cabangId,
       },
     });
   },
 
-  async update(id: string, body: unknown) {
+  async update(id: string, body: unknown, cabangId: string) {
     const existing = await prisma.product.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("Produk");
+    if (existing.cabangId !== cabangId) throw new NotFoundError("Produk");
 
     const input = updateProductSchema.parse(body);
 
     if (input.sku && input.sku !== existing.sku) {
-      const skuExists = await prisma.product.findUnique({ where: { sku: input.sku } });
-      if (skuExists) throw new ConflictError("SKU sudah digunakan");
+      const skuExists = await prisma.product.findUnique({ where: { cabangId_sku: { cabangId, sku: input.sku } } });
+      if (skuExists) throw new ConflictError("SKU sudah digunakan di cabang ini");
     }
 
     return prisma.product.update({
@@ -92,9 +96,10 @@ export const ProductService = {
     });
   },
 
-  async delete(id: string) {
+  async delete(id: string, cabangId: string) {
     const existing = await prisma.product.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("Produk");
+    if (existing.cabangId !== cabangId) throw new NotFoundError("Produk");
 
     await prisma.$transaction([
       prisma.stockIn.deleteMany({ where: { productId: id } }),

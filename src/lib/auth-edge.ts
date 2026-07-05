@@ -34,3 +34,5 @@ export async function verifyTokenEdge(token: string): Promise<JwtPayload | null>
     return null;
   }
 }
+
+export type { JwtPayload };

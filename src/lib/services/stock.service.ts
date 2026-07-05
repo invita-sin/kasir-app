@@ -16,31 +16,33 @@ const stockOutSchema = z.object({
 });
 
 export const StockService = {
-  async listStockIn(params: { page?: number; limit?: number; all?: boolean }) {
-    const { all } = params;
+  async listStockIn(params: { page?: number; limit?: number; all?: boolean; cabangId: string }) {
+    const { all, cabangId } = params;
     const page = all ? 1 : Math.max(1, params.page || 1);
     const limit = all ? 9999 : Math.min(Math.max(1, params.limit || 50), 100);
     const skip = all ? 0 : (page - 1) * limit;
 
     const [data, total] = await prisma.$transaction([
       prisma.stockIn.findMany({
+        where: { product: { cabangId } },
         include: { product: { select: { id: true, name: true, sku: true } } },
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
-      prisma.stockIn.count(),
+      prisma.stockIn.count({ where: { product: { cabangId } } }),
     ]);
 
     if (all) return { data, total: data.length };
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
-  async createStockIn(body: unknown) {
+  async createStockIn(body: unknown, cabangId: string) {
     const input = stockInSchema.parse(body);
 
     const product = await prisma.product.findUnique({ where: { id: input.productId } });
     if (!product) throw new NotFoundError("Produk");
+    if (product.cabangId !== cabangId) throw new NotFoundError("Produk");
 
     stockInTotal.inc();
 
@@ -57,31 +59,33 @@ export const StockService = {
     return stockIn;
   },
 
-  async listStockOut(params: { page?: number; limit?: number; all?: boolean }) {
-    const { all } = params;
+  async listStockOut(params: { page?: number; limit?: number; all?: boolean; cabangId: string }) {
+    const { all, cabangId } = params;
     const page = all ? 1 : Math.max(1, params.page || 1);
     const limit = all ? 9999 : Math.min(Math.max(1, params.limit || 50), 100);
     const skip = all ? 0 : (page - 1) * limit;
 
     const [data, total] = await prisma.$transaction([
       prisma.stockOut.findMany({
+        where: { product: { cabangId } },
         include: { product: { select: { id: true, name: true, sku: true, stock: true } } },
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
-      prisma.stockOut.count(),
+      prisma.stockOut.count({ where: { product: { cabangId } } }),
     ]);
 
     if (all) return { data, total: data.length };
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
-  async createStockOut(body: unknown) {
+  async createStockOut(body: unknown, cabangId: string) {
     const input = stockOutSchema.parse(body);
 
     const product = await prisma.product.findUnique({ where: { id: input.productId } });
     if (!product) throw new NotFoundError("Produk");
+    if (product.cabangId !== cabangId) throw new NotFoundError("Produk");
 
     if (product.stock < input.quantity) {
       throw new ValidationError(

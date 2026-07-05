@@ -13,33 +13,37 @@ const createSaleSchema = z.object({
 });
 
 export const TransactionService = {
-  async list(params: { page?: number; limit?: number; all?: boolean }) {
-    const { all } = params;
+  async list(params: { page?: number; limit?: number; all?: boolean; cabangId?: string }) {
+    const { all, cabangId } = params;
     const page = all ? 1 : Math.max(1, params.page || 1);
     const limit = all ? 9999 : Math.min(Math.max(1, params.limit || 50), 100);
     const skip = all ? 0 : (page - 1) * limit;
 
+    const where = cabangId ? { items: { some: { product: { cabangId } } } } : {};
+
     const [data, total] = await prisma.$transaction([
       prisma.sale.findMany({
+        where,
         include: { items: { include: { product: true } } },
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
-      prisma.sale.count(),
+      prisma.sale.count({ where }),
     ]);
 
     if (all) return { data, total: data.length };
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
-  async create(body: unknown) {
+  async create(body: unknown, cabangId: string) {
     const input = createSaleSchema.parse(body);
 
     const itemsWithProducts = await Promise.all(
       input.items.map(async (item, i) => {
         const product = await prisma.product.findUnique({ where: { id: item.productId } });
         if (!product) throw new NotFoundError(`Item ke-${i + 1}: produk`);
+        if (product.cabangId !== cabangId) throw new NotFoundError(`Item ke-${i + 1}: produk`);
 
         if (product.stock < item.quantity) {
           throw new ValidationError(
