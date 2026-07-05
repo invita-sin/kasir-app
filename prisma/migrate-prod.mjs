@@ -1,13 +1,14 @@
 import { PrismaClient } from "@prisma/client";
+import { webcrypto } from "node:crypto";
 
 const prisma = new PrismaClient();
 
 async function hashPassword(password) {
   if (!process.env.PASSWORD_PEPPER) throw new Error("PASSWORD_PEPPER is required");
   const pepper = new TextEncoder().encode(process.env.PASSWORD_PEPPER);
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits(
+  const salt = webcrypto.getRandomValues(new Uint8Array(16));
+  const key = await webcrypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await webcrypto.subtle.deriveBits(
     { name: "PBKDF2", salt: new Uint8Array([...salt, ...pepper]), iterations: 600000, hash: "SHA-256" },
     key, 256
   );
