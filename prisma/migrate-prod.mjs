@@ -30,9 +30,10 @@ async function main() {
   }
 
   const admin = await prisma.user.findUnique({ where: { username: "admin" } });
-  if (admin) {
-    await prisma.user.update({ where: { id: admin.id }, data: { role: "SUPER_ADMIN", cabangId: null, name: "Super Admin" } });
-    console.log("User admin -> SUPER_ADMIN");
+  const malaka = await prisma.cabang.findFirst({ where: { name: "Malaka" } });
+  if (admin && malaka) {
+    await prisma.user.update({ where: { id: admin.id }, data: { role: "ADMIN", cabangId: malaka.id, name: "Admin Malaka" } });
+    console.log("User admin -> ADMIN cabang Malaka");
   }
 
   if (!(await prisma.user.findUnique({ where: { username: "admin_cabang" } }))) {
