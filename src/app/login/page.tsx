@@ -53,7 +53,7 @@ export default function Login() {
           <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
             <Store className="w-6 h-6 text-blue-600" />
           </div>
-          <h1 className="text-xl font-bold text-gray-800">Kasir Malaka</h1>
+          <h1 className="text-xl font-bold text-gray-800">Kasir App</h1>
           <p className="text-sm text-gray-400 mt-1">Masuk untuk melanjutkan</p>
         </div>
 
