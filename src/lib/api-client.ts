@@ -40,6 +40,7 @@ export interface UserData {
   username: string;
   name: string;
   role: string;
+  cabangId?: string | null;
   createdAt: string;
 }
 
@@ -48,6 +49,7 @@ export interface CreateUserInput {
   password: string;
   name: string;
   role?: string;
+  cabangId?: string | null;
 }
 
 let refreshing: Promise<boolean> | null = null;

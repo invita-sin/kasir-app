@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Store } from "lucide-react";
 import toast from "react-hot-toast";
-import { usersApi, getErrorMessage, ApiError } from "@/lib/api-client";
+import { usersApi, getErrorMessage, ApiError, apiGet } from "@/lib/api-client";
 import type { UserData, CreateUserInput } from "@/lib/api-client";
 
 function SkeletonRow() {
@@ -26,6 +26,7 @@ interface FormErrors {
 
 export default function Users() {
   const [users, setUsers] = useState<UserData[]>([]);
+  const [cabangList, setCabangList] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<UserData | null>(null);
@@ -43,20 +44,28 @@ export default function Users() {
     setLoading(false);
   }, []);
 
+  const fetchCabang = useCallback(async () => {
+    try {
+      const data = await apiGet<{ id: string; name: string }[]>("/api/cabang");
+      setCabangList(data);
+    } catch {}
+  }, []);
+
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchCabang();
+  }, [fetchUsers, fetchCabang]);
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ username: "", password: "", name: "", role: "KASIR" });
+    setForm({ username: "", password: "", name: "", role: "KASIR", cabangId: cabangList[0]?.id || "" });
     setErrors({});
     setShowForm(true);
   };
 
   const openEdit = (user: UserData) => {
     setEditing(user);
-    setForm({ username: user.username, password: "", name: user.name, role: user.role });
+    setForm({ username: user.username, password: "", name: user.name, role: user.role, cabangId: user.cabangId || "" });
     setErrors({});
     setShowForm(true);
   };
@@ -106,8 +115,8 @@ export default function Users() {
   };
 
   const handleDelete = async (user: UserData) => {
-    if (user.role === "ADMIN") {
-      toast.error("Tidak dapat menghapus admin");
+    if (user.role === "SUPER_ADMIN") {
+      toast.error("Tidak dapat menghapus Super Admin");
       return;
     }
     if (!confirm(`Hapus user "${user.name}" (${user.username})?`)) return;
@@ -192,8 +201,24 @@ export default function Users() {
                 >
                   <option value="KASIR">Kasir</option>
                   <option value="ADMIN">Admin</option>
+                  <option value="SUPER_ADMIN">Super Admin</option>
                 </select>
               </div>
+              {form.role !== "SUPER_ADMIN" && cabangList.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cabang</label>
+                  <select
+                    value={form.cabangId || ""}
+                    onChange={(e) => setForm({ ...form, cabangId: e.target.value || null })}
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Pilih cabang</option>
+                    {cabangList.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
@@ -223,6 +248,7 @@ export default function Users() {
                 <th className="py-3 px-4 font-medium">Username</th>
                 <th className="py-3 px-4 font-medium">Nama</th>
                 <th className="py-3 px-4 font-medium">Role</th>
+                <th className="py-3 px-4 font-medium">Cabang</th>
                 <th className="py-3 px-4 font-medium">Dibuat</th>
                 <th className="py-3 px-4 font-medium">Aksi</th>
               </tr>
@@ -242,6 +268,7 @@ export default function Users() {
                 <th className="py-3 px-4 font-medium">Username</th>
                 <th className="py-3 px-4 font-medium">Nama</th>
                 <th className="py-3 px-4 font-medium">Role</th>
+                <th className="py-3 px-4 font-medium">Cabang</th>
                 <th className="py-3 px-4 font-medium">Dibuat</th>
                 <th className="py-3 px-4 font-medium">Aksi</th>
               </tr>
@@ -253,10 +280,13 @@ export default function Users() {
                   <td className="py-3 px-4 text-sm text-gray-600">{user.name}</td>
                   <td className="py-3 px-4">
                     <span className={`text-[11px] font-semibold uppercase px-2 py-0.5 rounded ${
-                      user.role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-green-100 text-green-700"
+                      user.role === "SUPER_ADMIN" ? "bg-red-100 text-red-700" : user.role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-green-100 text-green-700"
                     }`}>
-                      {user.role}
+                      {user.role === "SUPER_ADMIN" ? "SUPER ADMIN" : user.role}
                     </span>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-500">
+                    {user.cabangId ? cabangList.find((c) => c.id === user.cabangId)?.name || "-" : "-"}
                   </td>
                   <td className="py-3 px-4 text-sm text-gray-500">
                     {new Date(user.createdAt).toLocaleDateString("id-ID")}
@@ -270,7 +300,7 @@ export default function Users() {
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      {user.role !== "ADMIN" && (
+                      {user.role !== "SUPER_ADMIN" && (
                         <button
                           onClick={() => handleDelete(user)}
                           className="p-1.5 rounded-lg hover:bg-red-50 text-red-400"
