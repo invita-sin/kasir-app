@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CabangService } from "@/lib/services/cabang.service";
-import { requireSuperAdmin } from "@/lib/middleware-helpers";
+import { requireSuperAdmin, requireAdmin } from "@/lib/middleware-helpers";
 import { handleApiError } from "@/lib/errors";
 import { logger, generateRequestId } from "@/lib/logger";
 import { httpRequestsTotal, httpRequestDurationSeconds } from "@/lib/metrics";
@@ -13,7 +13,7 @@ export async function GET(
   const requestId = generateRequestId();
   const start = Date.now();
   try {
-    const user = await requireSuperAdmin(req);
+    const user = await requireAdmin(req);
     if (!user) {
       httpRequestsTotal.inc({ method: "GET", path: "/api/cabang/[id]", status: 401 });
       httpRequestDurationSeconds.observe({ method: "GET", path: "/api/cabang/[id]" }, (Date.now() - start) / 1000);
