@@ -31,7 +31,7 @@ async function main() {
 
   const admin = await prisma.user.findUnique({ where: { username: "admin" } });
   if (admin) {
-    await prisma.user.update({ where: { id: admin.id }, data: { role: "SUPER_ADMIN", cabangId: null } });
+    await prisma.user.update({ where: { id: admin.id }, data: { role: "SUPER_ADMIN", cabangId: null, name: "Super Admin" } });
     console.log("User admin -> SUPER_ADMIN");
   }
 
