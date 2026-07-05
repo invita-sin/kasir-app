@@ -34,12 +34,15 @@ export const ProductService = {
       where.OR = [{ name: { contains: search } }, { sku: { contains: search } }];
     }
 
+    const include = { cabang: { select: { id: true, name: true } } };
+
     const [data, total] = await prisma.$transaction([
       prisma.product.findMany({
         where: where as any,
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
+        include,
       }),
       prisma.product.count({ where: where as any }),
     ]);

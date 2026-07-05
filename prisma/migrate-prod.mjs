@@ -80,6 +80,15 @@ async function main() {
     console.log("12 products created");
   }
 
+  const superAdminExists = await prisma.user.findFirst({ where: { role: "SUPER_ADMIN" } });
+  if (!superAdminExists) {
+    const pwd = await hashPassword(process.env.SUPER_ADMIN_PASSWORD || "super123");
+    await prisma.user.create({
+      data: { username: "super_admin", password: pwd, name: "Super Admin", role: "SUPER_ADMIN", cabangId: null },
+    });
+    console.log("SUPER_ADMIN user created: super_admin");
+  }
+
   console.log("Migration selesai!");
 }
 

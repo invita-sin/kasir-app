@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyTokenEdge } from "@/lib/auth-edge";
 import { config as appConfig } from "@/lib/config";
 
-const publicPaths = ["/login", "/api/auth/login", "/api/auth/refresh", "/api/health"];
+const publicPaths = ["/login", "/api/auth/login", "/api/auth/refresh", "/api/health", "/api/ready"];
 
 const adminAllowedPagePaths = ["/transactions"];
 

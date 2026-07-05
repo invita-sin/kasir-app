@@ -7,6 +7,11 @@ import { formatRupiah } from "@/lib/utils";
 import Pagination from "@/components/Pagination";
 import toast from "react-hot-toast";
 
+interface CabangInfo {
+  id: string;
+  name: string;
+}
+
 interface Product {
   id: string;
   name: string;
@@ -15,6 +20,7 @@ interface Product {
   stock: number;
   minStock: number;
   description: string | null;
+  cabang?: CabangInfo;
 }
 
 export default function Products() {
@@ -93,6 +99,7 @@ export default function Products() {
                 <th className="py-3 px-4 font-medium">Harga</th>
                 <th className="py-3 px-4 font-medium">Stok</th>
                 <th className="py-3 px-4 font-medium">Min Stok</th>
+                {products[0]?.cabang && <th className="py-3 px-4 font-medium">Cabang</th>}
                 <th className="py-3 px-4 font-medium">Aksi</th>
               </tr>
             </thead>
@@ -119,6 +126,9 @@ export default function Products() {
                     </span>
                   </td>
                   <td className="py-3 px-4 text-sm text-gray-500">{product.minStock}</td>
+                  {product.cabang && (
+                    <td className="py-3 px-4 text-sm text-gray-500">{product.cabang.name}</td>
+                  )}
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <Link
