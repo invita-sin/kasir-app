@@ -1,0 +1,30 @@
+declare module "lucide-react" {
+  import { FC, SVGProps } from "react";
+  export const LayoutDashboard: FC<SVGProps<SVGSVGElement>>;
+  export const Package: FC<SVGProps<SVGSVGElement>>;
+  export const ArrowDownToLine: FC<SVGProps<SVGSVGElement>>;
+  export const ArrowUpFromLine: FC<SVGProps<SVGSVGElement>>;
+  export const ShoppingCart: FC<SVGProps<SVGSVGElement>>;
+  export const History: FC<SVGProps<SVGSVGElement>>;
+  export const Menu: FC<SVGProps<SVGSVGElement>>;
+  export const X: FC<SVGProps<SVGSVGElement>>;
+  export const Store: FC<SVGProps<SVGSVGElement>>;
+  export const Plus: FC<SVGProps<SVGSVGElement>>;
+  export const Edit: FC<SVGProps<SVGSVGElement>>;
+  export const Trash2: FC<SVGProps<SVGSVGElement>>;
+  export const Search: FC<SVGProps<SVGSVGElement>>;
+  export const AlertTriangle: FC<SVGProps<SVGSVGElement>>;
+  export const DollarSign: FC<SVGProps<SVGSVGElement>>;
+  export const TrendingUp: FC<SVGProps<SVGSVGElement>>;
+  export const ArrowLeft: FC<SVGProps<SVGSVGElement>>;
+  export const Minus: FC<SVGProps<SVGSVGElement>>;
+  export const ChevronDown: FC<SVGProps<SVGSVGElement>>;
+  export const ChevronUp: FC<SVGProps<SVGSVGElement>>;
+  export const ChevronLeft: FC<SVGProps<SVGSVGElement>>;
+  export const ChevronRight: FC<SVGProps<SVGSVGElement>>;
+  export const Printer: FC<SVGProps<SVGSVGElement>>;
+  export const LogOut: FC<SVGProps<SVGSVGElement>>;
+  export const User: FC<SVGProps<SVGSVGElement>>;
+  export const Users: FC<SVGProps<SVGSVGElement>>;
+  export const Shield: FC<SVGProps<SVGSVGElement>>;
+}

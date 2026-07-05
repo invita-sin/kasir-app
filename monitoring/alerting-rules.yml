@@ -1,0 +1,59 @@
+groups:
+  - name: kasir-app
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Error rate > 5%"
+          description: "Error rate is {{ $value | humanizePercentage }} on {{ $labels.path }}"
+
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, path)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency on {{ $labels.path }}"
+          description: "p95 latency is {{ $value }}s on {{ $labels.path }}"
+
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.instance }} is down"
+
+      - alert: LowStockWarning
+        expr: low_stock_products > 0
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Products below minimum stock"
+          description: "{{ $value }} products have stock below minimum threshold"
+
+      - alert: NoRecentSales
+        expr: rate(sales_created_total[1h]) == 0
+        for: 2h
+        labels:
+          severity: warning
+        annotations:
+          summary: "No sales in the last 2 hours"
+          description: "No sales created in the past 2 hours — possible issue"
+
+      - alert: DatabaseDisconnected
+        expr: probe_success{job="kasir-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection lost"
+          description: "Health check endpoint returns non-200 status"
