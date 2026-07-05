@@ -43,7 +43,13 @@ async function main() {
     console.log("admin_cabang created");
   }
 
-  if (!(await prisma.user.findUnique({ where: { username: "kasir" } }))) {
+  const kasirUser = await prisma.user.findUnique({ where: { username: "kasir" } });
+  if (kasirUser) {
+    if (!kasirUser.cabangId) {
+      await prisma.user.update({ where: { id: kasirUser.id }, data: { cabangId: cabang.id } });
+      console.log("kasir -> cabangId set");
+    }
+  } else {
     const pwd = await hashPassword(process.env.KASIR_PASSWORD || "kasir123");
     await prisma.user.create({
       data: { username: "kasir", password: pwd, name: "Kasir Toko", role: "KASIR", cabangId: cabang.id },
