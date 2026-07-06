@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -17,7 +16,8 @@ import {
 } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
-import { apiGet, apiPost } from "@/lib/api-client";
+import { apiPost } from "@/lib/api-client";
+import { AuthProvider, useAuth } from "@/lib/auth-context";
 import "./globals.css";
 
 const superAdminNavItems = [
@@ -46,23 +46,10 @@ const kasirNavItems = [
   { href: "/transactions/history", label: "Riwayat", icon: History },
 ];
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const [username, setUsername] = useState("");
-  const [role, setRole] = useState("");
+function AppShell({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
-
-  const [cabang, setCabang] = useState<{ name: string; appName: string; address?: string; phone?: string } | null>(null);
-
-  useEffect(() => {
-    if (pathname === "/login") {
-      setUsername(""); setRole(""); setCabang(null);
-      return;
-    }
-    apiGet<{ id: string; username: string; name: string; role: string; cabang: { name: string; appName: string; address?: string; phone?: string } | null }>("/api/auth/me")
-      .then((d) => { setUsername(d.name || d.username); setRole(d.role); setCabang(d.cabang); })
-      .catch(() => {});
-  }, [pathname]);
 
   const handleLogout = async () => {
     try {
@@ -85,6 +72,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
+  const role = user?.role || "";
+  const cabang = user?.cabang || null;
   const allNavItems = role === "SUPER_ADMIN" ? superAdminNavItems : role === "ADMIN" ? adminNavItems : kasirNavItems;
 
   return (
@@ -99,7 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
             <div className="ml-auto flex items-center gap-2 text-sm text-gray-500 shrink-0">
               <User className="w-4 h-4" />
-              <span className="hidden sm:inline">{username || "User"}</span>
+              <span className="hidden sm:inline">{user?.name || "User"}</span>
               {role && (
                 <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${
                   role === "SUPER_ADMIN" ? "bg-red-100 text-red-700" : role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-green-100 text-green-700"
@@ -137,5 +126,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
       </body>
     </html>
+  );
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider>
+      <AppShell>{children}</AppShell>
+    </AuthProvider>
   );
 }

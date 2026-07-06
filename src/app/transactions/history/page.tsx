@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { Search, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
+import useSWR from "swr";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { formatRupiah, formatDate } from "@/lib/utils";
+import { fetcher } from "@/lib/fetcher";
 import Pagination from "@/components/Pagination";
 
 interface SaleItem {
@@ -19,28 +21,24 @@ interface Sale {
   items: SaleItem[];
 }
 
+interface SalesResponse {
+  data: Sale[];
+  totalPages: number;
+}
+
 export default function TransactionHistory() {
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchSales = useCallback(async () => {
-    const res = await fetch(`/api/transactions?page=${page}&limit=20`);
-    if (res.ok) {
-      const json = await res.json();
-      setSales(json.data || []);
-      setTotalPages(json.totalPages || 1);
-    }
-    setLoading(false);
-  }, [page]);
+  const { data, isLoading } = useSWR<SalesResponse>(
+    `/api/transactions?page=${page}&limit=20`,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 10000 }
+  );
 
-  useEffect(() => {
-    fetchSales();
-  }, [fetchSales]);
+  if (isLoading) return <div className="text-center py-8 text-gray-500">Memuat...</div>;
 
-  if (loading) return <div className="text-center py-8 text-gray-500">Memuat...</div>;
+  const sales = data?.data || [];
 
   return (
     <div className="space-y-5">
@@ -89,7 +87,7 @@ export default function TransactionHistory() {
               )}
             </div>
           ))}
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination page={page} totalPages={data?.totalPages || 1} onPageChange={setPage} />
         </div>
       )}
     </div>

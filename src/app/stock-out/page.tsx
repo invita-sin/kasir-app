@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { Plus } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { fetcher } from "@/lib/fetcher";
 import Pagination from "@/components/Pagination";
 import toast from "react-hot-toast";
 
@@ -21,54 +23,41 @@ interface StockOut {
   product: Product;
 }
 
-interface FormErrors {
-  productId?: string;
-  quantity?: string;
+interface StockOutResponse {
+  data: StockOut[];
+  totalPages: number;
 }
 
 export default function StockOutPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [items, setItems] = useState<StockOut[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ productId: "", quantity: "", note: "" });
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [errors, setErrors] = useState<FormErrors>({});
 
-  const fetchData = useCallback(async () => {
-    const [itemsRes, productsRes] = await Promise.all([
-      fetch(`/api/stock-out?page=${page}&limit=20`),
-      fetch("/api/products?all=true"),
-    ]);
-    if (itemsRes.ok) {
-      const json = await itemsRes.json();
-      setItems(json.data || []);
-      setTotalPages(json.totalPages || 1);
-    }
-    setProducts(await productsRes.json());
-    setLoading(false);
-  }, [page]);
+  const { data: itemsData, isLoading, mutate } = useSWR<StockOutResponse>(
+    `/api/stock-out?page=${page}&limit=20`,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 10000 }
+  );
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const { data: products } = useSWR<Product[]>("/api/products?all=true", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 30000,
+  });
 
-  const validate = (): boolean => {
-    const errs: FormErrors = {};
-    if (!form.productId) errs.productId = "Pilih produk";
-    if (!form.quantity || Number(form.quantity) < 1) {
-      errs.quantity = "Jumlah minimal 1";
-    } else if (selectedProduct && Number(form.quantity) > selectedProduct.stock) {
-      errs.quantity = `Melebihi stok tersedia (${selectedProduct.stock})`;
-    }
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
+  const items = itemsData?.data || [];
+
+  const selectedProduct = products?.find((p) => p.id === form.productId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!form.productId || !form.quantity || Number(form.quantity) < 1) {
+      toast.error("Lengkapi form dengan benar");
+      return;
+    }
+    if (selectedProduct && Number(form.quantity) > selectedProduct.stock) {
+      toast.error(`Melebihi stok tersedia (${selectedProduct.stock})`);
+      return;
+    }
     const res = await fetch("/api/stock-out", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -79,14 +68,12 @@ export default function StockOutPage() {
       toast.success("Stok keluar berhasil dicatat");
       setShowForm(false);
       setForm({ productId: "", quantity: "", note: "" });
-      fetchData();
+      mutate();
     } else {
       const data = await res.json();
       toast.error(data.error || "Gagal mencatat stok keluar");
     }
   };
-
-  const selectedProduct = products.find((p) => p.id === form.productId);
 
   return (
     <div className="space-y-5">
@@ -111,20 +98,17 @@ export default function StockOutPage() {
                 <select
                   required
                   value={form.productId}
-                  onChange={(e) => { setForm({ ...form, productId: e.target.value }); setErrors({ ...errors, productId: undefined }); }}
-                  className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.productId ? "border-red-300 bg-red-50" : "border-gray-200"
-                  }`}
+                  onChange={(e) => setForm({ ...form, productId: e.target.value })}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Pilih produk</option>
-                  {products.map((p) => (
+                  {products?.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name} ({p.sku}) - Stok: {p.stock}
                     </option>
                   ))}
                 </select>
-                {errors.productId && <p className="mt-1 text-xs text-red-500">{errors.productId}</p>}
-                {selectedProduct && !errors.productId && (
+                {selectedProduct && (
                   <p className="text-xs text-gray-400 mt-1">
                     Stok saat ini: <strong>{selectedProduct.stock}</strong>
                   </p>
@@ -136,14 +120,10 @@ export default function StockOutPage() {
                   type="number"
                   required
                   min={1}
-                  max={selectedProduct?.stock || 1}
                   value={form.quantity}
-                  onChange={(e) => { setForm({ ...form, quantity: e.target.value }); setErrors({ ...errors, quantity: undefined }); }}
-                  className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.quantity ? "border-red-300 bg-red-50" : "border-gray-200"
-                  }`}
+                  onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                {errors.quantity && <p className="mt-1 text-xs text-red-500">{errors.quantity}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
@@ -175,7 +155,7 @@ export default function StockOutPage() {
         </div>
       )}
 
-      {loading ? (
+      {isLoading ? (
         <div className="text-center py-8 text-gray-500">Memuat...</div>
       ) : items.length === 0 ? (
         <div className="text-center py-8 text-gray-400">Tidak ada data</div>
@@ -203,7 +183,7 @@ export default function StockOutPage() {
               ))}
             </tbody>
           </table>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination page={page} totalPages={itemsData?.totalPages || 1} onPageChange={setPage} />
         </div>
       )}
     </div>

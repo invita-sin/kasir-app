@@ -1,69 +1,56 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import Link from "next/link";
 import { Plus, Edit, Trash2, Search, AlertTriangle } from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
+import { fetcher } from "@/lib/fetcher";
 import Pagination from "@/components/Pagination";
 import toast from "react-hot-toast";
 
-interface CabangInfo {
-  id: string;
-  name: string;
-}
-
+interface CabangInfo { id: string; name: string; }
 interface Product {
-  id: string;
-  name: string;
-  sku: string;
-  price: number;
-  stock: number;
-  minStock: number;
-  description: string | null;
+  id: string; name: string; sku: string; price: number;
+  stock: number; minStock: number; description: string | null;
   cabang?: CabangInfo;
 }
 
+interface ProductsResponse {
+  data: Product[];
+  totalPages: number;
+}
+
 export default function Products() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchProducts = useCallback(async () => {
-    const params = new URLSearchParams({ page: String(page), limit: "20" });
-    if (search) params.set("search", search);
-    const res = await fetch(`/api/products?${params}`);
-    if (res.ok) {
-      const json = await res.json();
-      setProducts(json.data || []);
-      setTotalPages(json.totalPages || 1);
-    }
-    setLoading(false);
-  }, [search, page]);
+  const params = new URLSearchParams({ page: String(page), limit: "20" });
+  if (search) params.set("search", search);
 
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+  const { data, isLoading, mutate } = useSWR<ProductsResponse>(
+    `/api/products?${params}`,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 10000 }
+  );
 
-  useEffect(() => {
-    setPage(1);
-  }, [search]);
+  const products = data?.data || [];
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Hapus produk "${name}"?`)) return;
-    const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Gagal menghapus");
       toast.success("Produk berhasil dihapus");
-      fetchProducts();
-    } else {
+      mutate();
+    } catch {
       toast.error("Gagal menghapus produk");
     }
   };
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold text-gray-800">Produk</h1>
         <Link
           href="/products/create"
@@ -78,29 +65,29 @@ export default function Products() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           type="text"
-          placeholder="Cari nama atau SKU..."
+          placeholder="Cari produk..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="text-center py-8 text-gray-500">Memuat...</div>
       ) : products.length === 0 ? (
         <div className="text-center py-8 text-gray-400">Tidak ada produk</div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full bg-white rounded-xl shadow-sm border border-gray-100">
+          <table className="w-full bg-white rounded-xl shadow-sm border border-gray-100 min-w-[640px]">
             <thead>
               <tr className="border-b border-gray-100 text-left text-sm text-gray-500">
                 <th className="py-3 px-4 font-medium">Nama</th>
                 <th className="py-3 px-4 font-medium">SKU</th>
                 <th className="py-3 px-4 font-medium">Harga</th>
                 <th className="py-3 px-4 font-medium">Stok</th>
-                <th className="py-3 px-4 font-medium">Min Stok</th>
-                {products[0]?.cabang && <th className="py-3 px-4 font-medium">Cabang</th>}
-                <th className="py-3 px-4 font-medium">Aksi</th>
+                <th className="py-3 px-4 font-medium hidden sm:table-cell">Min Stok</th>
+                <th className="py-3 px-4 font-medium hidden md:table-cell">Cabang</th>
+                <th className="py-3 px-4 font-medium text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -110,36 +97,34 @@ export default function Products() {
                     <div className="flex items-center gap-2">
                       {product.name}
                       {product.stock <= product.minStock && (
-                        <AlertTriangle className="w-4 h-4 text-red-500" />
+                        <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
                       )}
                     </div>
                   </td>
                   <td className="py-3 px-4 text-sm text-gray-500">{product.sku}</td>
-                  <td className="py-3 px-4 text-sm font-medium">{formatRupiah(product.price)}</td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`text-sm font-medium ${
-                        product.stock <= product.minStock ? "text-red-600" : "text-green-600"
-                      }`}
-                    >
-                      {product.stock}
-                    </span>
+                  <td className="py-3 px-4 text-sm font-semibold text-gray-800">
+                    {formatRupiah(product.price)}
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-500">{product.minStock}</td>
-                  {product.cabang && (
-                    <td className="py-3 px-4 text-sm text-gray-500">{product.cabang.name}</td>
-                  )}
+                  <td className={`py-3 px-4 text-sm font-semibold ${
+                    product.stock <= product.minStock ? "text-red-600" : "text-green-600"
+                  }`}>
+                    {product.stock}
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-500 hidden sm:table-cell">{product.minStock}</td>
+                  <td className="py-3 px-4 text-sm text-gray-500 hidden md:table-cell">
+                    {product.cabang?.name || "-"}
+                  </td>
                   <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center gap-2">
                       <Link
                         href={`/products/${product.id}/edit`}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
+                        className="p-1.5 rounded hover:bg-blue-50 text-blue-600"
                       >
                         <Edit className="w-4 h-4" />
                       </Link>
                       <button
                         onClick={() => handleDelete(product.id, product.name)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-red-400"
+                        className="p-1.5 rounded hover:bg-red-50 text-red-600"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -149,7 +134,7 @@ export default function Products() {
               ))}
             </tbody>
           </table>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination page={page} totalPages={data?.totalPages || 1} onPageChange={setPage} />
         </div>
       )}
     </div>

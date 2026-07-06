@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import useSWR from "swr";
 import {
   Package,
   ShoppingCart,
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { formatRupiah, formatDate } from "@/lib/utils";
+import { fetcher } from "@/lib/fetcher";
 
 interface DashboardData {
   totalProducts: number;
@@ -37,23 +38,15 @@ interface DashboardData {
 }
 
 export default function Dashboard() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, error, isLoading } = useSWR<DashboardData>("/api/dashboard", fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 30000,
+  });
 
-  useEffect(() => {
-    fetch("/api/dashboard")
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Gagal memuat data dashboard");
-        return res.json();
-      })
-      .then(setData)
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
-  }, []);
+  if (isLoading) return <div className="text-center py-8 text-gray-500">Memuat...</div>;
 
-  if (loading) return <div className="text-center py-8 text-gray-500">Memuat...</div>;
-
-  if (!data) return <div className="text-center py-8 text-red-500">Gagal memuat data</div>;
+  if (error || !data) return <div className="text-center py-8 text-red-500">Gagal memuat data</div>;
 
   const cards = [
     {

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Store } from "lucide-react";
 import toast from "react-hot-toast";
+import { useAuth } from "@/lib/auth-context";
 
 interface FormErrors {
   username?: string;
@@ -12,6 +13,7 @@ interface FormErrors {
 
 export default function Login() {
   const router = useRouter();
+  const { setAuth } = useAuth();
   const [form, setForm] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -36,9 +38,16 @@ export default function Login() {
     });
 
     if (res.ok) {
+      const data = await res.json();
+      setAuth({
+        id: data.id,
+        username: data.username,
+        name: data.name,
+        role: data.role,
+        cabang: data.cabang,
+      });
       toast.success("Login berhasil");
       router.push("/");
-      router.refresh();
     } else {
       const data = await res.json();
       toast.error(data.error || "Login gagal");
@@ -90,13 +99,7 @@ export default function Login() {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            {loading ? (
-              "Memproses..."
-            ) : (
-              <>
-                Masuk
-              </>
-            )}
+            {loading ? "Memproses..." : "Masuk"}
           </button>
         </form>
       </div>

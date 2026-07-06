@@ -117,7 +117,7 @@ export const AuthService = {
     ]);
 
     return {
-      token, refreshToken, username: user.username, name: user.name, role: user.role,
+      id: user.id, token, refreshToken, username: user.username, name: user.name, role: user.role,
       cabang: user.cabang ? { id: user.cabang.id, name: user.cabang.name, appName: user.cabang.appName, address: user.cabang.address, phone: user.cabang.phone } : null,
     };
   },
