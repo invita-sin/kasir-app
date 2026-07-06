@@ -57,69 +57,69 @@ export default function CreateProduct() {
   return (
     <div className="max-w-lg mx-auto space-y-5">
       <div className="flex items-center gap-3">
-        <Link href="/products" className="p-2 rounded-lg hover:bg-gray-100">
+        <Link href="/products" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-800">Tambah Produk</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Tambah Produk</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4" noValidate>
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4 dark:bg-gray-800 dark:border-gray-700" noValidate>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nama Produk *</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nama Produk *</label>
           <input
             type="text"
             required
             value={form.name}
             onChange={(e) => { setForm({ ...form, name: e.target.value }); setErrors({ ...errors, name: undefined }); }}
-            className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.name ? "border-red-300 bg-red-50" : "border-gray-200"
+            className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 ${
+              errors.name ? "border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-500" : "border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             }`}
           />
-          {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+          {errors.name && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{errors.name}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">SKU *</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">SKU *</label>
           <input
             type="text"
             required
             value={form.sku}
             onChange={(e) => { setForm({ ...form, sku: e.target.value }); setErrors({ ...errors, sku: undefined }); }}
-            className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.sku ? "border-red-300 bg-red-50" : "border-gray-200"
+            className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 ${
+              errors.sku ? "border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-500" : "border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             }`}
           />
-          {errors.sku && <p className="mt-1 text-xs text-red-500">{errors.sku}</p>}
+          {errors.sku && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{errors.sku}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Harga *</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Harga *</label>
           <input
             type="number"
             required
             min={0}
             value={form.price}
             onChange={(e) => { setForm({ ...form, price: e.target.value }); setErrors({ ...errors, price: undefined }); }}
-            className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.price ? "border-red-300 bg-red-50" : "border-gray-200"
+            className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 ${
+              errors.price ? "border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-500" : "border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             }`}
           />
-          {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price}</p>}
+          {errors.price && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{errors.price}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Minimal Stok</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Minimal Stok</label>
           <input
             type="number"
             min={0}
             value={form.minStock}
             onChange={(e) => setForm({ ...form, minStock: e.target.value })}
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deskripsi</label>
           <textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400"
             rows={3}
           />
         </div>

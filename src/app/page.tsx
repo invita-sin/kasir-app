@@ -44,7 +44,7 @@ export default function Dashboard() {
     dedupingInterval: 30000,
   });
 
-  if (isLoading) return <div className="text-center py-8 text-gray-500">Memuat...</div>;
+  if (isLoading) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Memuat...</div>;
 
   if (error || !data) return <div className="text-center py-8 text-red-500">Gagal memuat data</div>;
 
@@ -81,15 +81,15 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+      <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Dashboard</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((card) => (
           <Link key={card.label} href={card.href}>
-            <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">{card.label}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{card.label}</p>
                   <p className="text-2xl font-bold mt-1">{card.value}</p>
                 </div>
                 <div className={`${card.color} p-3 rounded-lg`}>
@@ -102,22 +102,22 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-green-500" />
             Penjualan Terbaru
           </h2>
           {data.recentSales.length === 0 ? (
-            <p className="text-gray-400 text-sm">Belum ada penjualan</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm">Belum ada penjualan</p>
           ) : (
             <div className="space-y-3">
               {data.recentSales.map((sale) => (
-                <div key={sale.id} className="flex justify-between items-center border-b border-gray-50 pb-2">
+                <div key={sale.id} className="flex justify-between items-center border-b border-gray-50 dark:border-gray-700 pb-2">
                   <div>
-                    <p className="text-sm font-medium">
+                    <p className="text-sm font-medium dark:text-gray-200">
                       {sale.items.map((i) => i.product.name).join(", ")}
                     </p>
-                    <p className="text-xs text-gray-400">{formatDate(sale.createdAt)}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{formatDate(sale.createdAt)}</p>
                   </div>
                   <span className="text-sm font-semibold text-green-600">
                     {formatRupiah(sale.total)}
@@ -128,18 +128,18 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-red-500" />
             Stok Menipis
           </h2>
           {data.lowStockProducts.length === 0 ? (
-            <p className="text-gray-400 text-sm">Semua stok aman</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm">Semua stok aman</p>
           ) : (
             <div className="space-y-3">
               {data.lowStockProducts.slice(0, 5).map((p) => (
-                <div key={p.id} className="flex justify-between items-center border-b border-gray-50 pb-2">
-                  <p className="text-sm font-medium">{p.name}</p>
+                <div key={p.id} className="flex justify-between items-center border-b border-gray-50 dark:border-gray-700 pb-2">
+                  <p className="text-sm font-medium dark:text-gray-200">{p.name}</p>
                   <span className="text-sm font-semibold text-red-500">
                     {p.stock} / {p.minStock}
                   </span>
@@ -149,17 +149,17 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <h2 className="font-semibold text-gray-800 mb-4">Stok Masuk Terbaru</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">Stok Masuk Terbaru</h2>
           {data.recentStockIn.length === 0 ? (
-            <p className="text-gray-400 text-sm">Belum ada stok masuk</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm">Belum ada stok masuk</p>
           ) : (
             <div className="space-y-3">
               {data.recentStockIn.map((item) => (
-                <div key={item.id} className="flex justify-between items-center border-b border-gray-50 pb-2">
+                <div key={item.id} className="flex justify-between items-center border-b border-gray-50 dark:border-gray-700 pb-2">
                   <div>
-                    <p className="text-sm font-medium">{item.product.name}</p>
-                    <p className="text-xs text-gray-400">{formatDate(item.createdAt)}</p>
+                    <p className="text-sm font-medium dark:text-gray-200">{item.product.name}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{formatDate(item.createdAt)}</p>
                   </div>
                   <span className="text-sm font-semibold text-blue-600">+{item.quantity}</span>
                 </div>
@@ -168,17 +168,17 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-          <h2 className="font-semibold text-gray-800 mb-4">Stok Keluar Terbaru</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">Stok Keluar Terbaru</h2>
           {data.recentStockOut.length === 0 ? (
-            <p className="text-gray-400 text-sm">Belum ada stok keluar</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm">Belum ada stok keluar</p>
           ) : (
             <div className="space-y-3">
               {data.recentStockOut.map((item) => (
-                <div key={item.id} className="flex justify-between items-center border-b border-gray-50 pb-2">
+                <div key={item.id} className="flex justify-between items-center border-b border-gray-50 dark:border-gray-700 pb-2">
                   <div>
-                    <p className="text-sm font-medium">{item.product.name}</p>
-                    <p className="text-xs text-gray-400">{formatDate(item.createdAt)}</p>
+                    <p className="text-sm font-medium dark:text-gray-200">{item.product.name}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{formatDate(item.createdAt)}</p>
                   </div>
                   <span className="text-sm font-semibold text-red-600">-{item.quantity}</span>
                 </div>

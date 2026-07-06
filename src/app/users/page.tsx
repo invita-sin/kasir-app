@@ -8,10 +8,10 @@ import type { UserData, CreateUserInput } from "@/lib/api-client";
 
 function SkeletonRow() {
   return (
-    <tr className="border-b border-gray-50">
+    <tr className="border-b border-gray-50 dark:border-gray-700">
       {[1, 2, 3, 4, 5].map((i) => (
         <td key={i} className="py-3 px-4">
-          <div className="h-4 bg-gray-100 rounded animate-pulse" style={{ width: `${40 + i * 15}px` }} />
+          <div className="h-4 bg-gray-100 rounded animate-pulse dark:bg-gray-700" style={{ width: `${40 + i * 15}px` }} />
         </td>
       ))}
     </tr>
@@ -133,7 +133,7 @@ export default function Users() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Kelola Pengguna</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Kelola Pengguna</h1>
         <button
           onClick={openCreate}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
@@ -144,27 +144,27 @@ export default function Users() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30" onClick={() => setShowForm(false)}>
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 dark:bg-black/60" onClick={() => setShowForm(false)}>
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 shadow-xl dark:bg-gray-800" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold mb-4">
               {editing ? "Edit User" : "Tambah User"}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Username *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username *</label>
                 <input
                   type="text"
                   required
                   value={form.username}
                   onChange={(e) => { setForm({ ...form, username: e.target.value }); setErrors({ ...errors, username: undefined }); }}
-                  className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.username ? "border-red-300 bg-red-50" : "border-gray-200"
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 ${
+                    errors.username ? "border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-500" : "border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   }`}
                 />
-                {errors.username && <p className="mt-1 text-xs text-red-500">{errors.username}</p>}
+                {errors.username && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{errors.username}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   {editing ? "Password (kosongkan jika tidak diganti)" : "Password *"}
                 </label>
                 <input
@@ -173,31 +173,31 @@ export default function Users() {
                   minLength={6}
                   value={form.password}
                   onChange={(e) => { setForm({ ...form, password: e.target.value }); setErrors({ ...errors, password: undefined }); }}
-                  className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.password ? "border-red-300 bg-red-50" : "border-gray-200"
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 ${
+                    errors.password ? "border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-500" : "border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   }`}
                 />
-                {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+                {errors.password && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{errors.password}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nama *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nama *</label>
                 <input
                   type="text"
                   required
                   value={form.name}
                   onChange={(e) => { setForm({ ...form, name: e.target.value }); setErrors({ ...errors, name: undefined }); }}
-                  className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.name ? "border-red-300 bg-red-50" : "border-gray-200"
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 ${
+                    errors.name ? "border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-500" : "border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   }`}
                 />
-                {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+                {errors.name && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{errors.name}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
                 <select
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400"
                 >
                   <option value="KASIR">Kasir</option>
                   <option value="ADMIN">Admin</option>
@@ -206,11 +206,11 @@ export default function Users() {
               </div>
               {form.role !== "SUPER_ADMIN" && cabangList.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cabang</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cabang</label>
                   <select
                     value={form.cabangId || ""}
                     onChange={(e) => setForm({ ...form, cabangId: e.target.value || null })}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400"
                   >
                     <option value="">Pilih cabang</option>
                     {cabangList.map((c) => (
@@ -223,7 +223,7 @@ export default function Users() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50"
+                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
                 >
                   Batal
                 </button>
@@ -242,9 +242,9 @@ export default function Users() {
 
       {loading ? (
         <div className="overflow-x-auto">
-          <table className="w-full bg-white rounded-xl shadow-sm border border-gray-100">
+          <table className="w-full bg-white rounded-xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-sm text-gray-500">
+              <tr className="border-b border-gray-100 text-left text-sm text-gray-500 dark:text-gray-400">
                 <th className="py-3 px-4 font-medium">Username</th>
                 <th className="py-3 px-4 font-medium">Nama</th>
                 <th className="py-3 px-4 font-medium">Role</th>
@@ -259,12 +259,12 @@ export default function Users() {
           </table>
         </div>
       ) : users.length === 0 ? (
-        <div className="text-center py-8 text-gray-400">Tidak ada pengguna</div>
+        <div className="text-center py-8 text-gray-400 dark:text-gray-500">Tidak ada pengguna</div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full bg-white rounded-xl shadow-sm border border-gray-100">
+          <table className="w-full bg-white rounded-xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-sm text-gray-500">
+              <tr className="border-b border-gray-100 text-left text-sm text-gray-500 dark:text-gray-400">
                 <th className="py-3 px-4 font-medium">Username</th>
                 <th className="py-3 px-4 font-medium">Nama</th>
                 <th className="py-3 px-4 font-medium">Role</th>
@@ -275,9 +275,9 @@ export default function Users() {
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                  <td className="py-3 px-4 text-sm font-medium text-gray-800">{user.username}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{user.name}</td>
+                <tr key={user.id} className="border-b border-gray-50 hover:bg-gray-50/50 dark:border-gray-700 dark:hover:bg-gray-700/50">
+                  <td className="py-3 px-4 text-sm font-medium text-gray-800 dark:text-gray-100">{user.username}</td>
+                  <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-300">{user.name}</td>
                   <td className="py-3 px-4">
                     <span className={`text-[11px] font-semibold uppercase px-2 py-0.5 rounded ${
                       user.role === "SUPER_ADMIN" ? "bg-red-100 text-red-700" : user.role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-green-100 text-green-700"
@@ -285,17 +285,17 @@ export default function Users() {
                       {user.role === "SUPER_ADMIN" ? "SUPER ADMIN" : user.role}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-500">
+                  <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">
                     {user.cabangId ? cabangList.find((c) => c.id === user.cabangId)?.name || "-" : "-"}
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-500">
+                  <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">
                     {new Date(user.createdAt).toLocaleDateString("id-ID")}
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => openEdit(user)}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
+                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 dark:hover:bg-gray-700"
                         title="Edit user"
                       >
                         <Edit className="w-4 h-4" />
@@ -303,7 +303,7 @@ export default function Users() {
                       {user.role !== "SUPER_ADMIN" && (
                         <button
                           onClick={() => handleDelete(user)}
-                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-400"
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 dark:hover:bg-red-900/30"
                           title="Hapus user"
                         >
                           <Trash2 className="w-4 h-4" />

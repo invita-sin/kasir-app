@@ -51,7 +51,7 @@ export default function Products() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-2xl font-bold text-gray-800">Produk</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Produk</h1>
         <Link
           href="/products/create"
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
@@ -62,25 +62,25 @@ export default function Products() {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
         <input
           type="text"
           placeholder="Cari produk..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400"
         />
       </div>
 
       {isLoading ? (
-        <div className="text-center py-8 text-gray-500">Memuat...</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">Memuat...</div>
       ) : products.length === 0 ? (
-        <div className="text-center py-8 text-gray-400">Tidak ada produk</div>
+        <div className="text-center py-8 text-gray-400 dark:text-gray-500">Tidak ada produk</div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full bg-white rounded-xl shadow-sm border border-gray-100 min-w-[640px]">
+          <table className="w-full bg-white rounded-xl shadow-sm border border-gray-100 min-w-[640px] dark:bg-gray-800 dark:border-gray-700">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-sm text-gray-500">
+              <tr className="border-b border-gray-100 text-left text-sm text-gray-500 dark:text-gray-400">
                 <th className="py-3 px-4 font-medium">Nama</th>
                 <th className="py-3 px-4 font-medium">SKU</th>
                 <th className="py-3 px-4 font-medium">Harga</th>
@@ -92,8 +92,8 @@ export default function Products() {
             </thead>
             <tbody>
               {products.map((product) => (
-                <tr key={product.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                  <td className="py-3 px-4 text-sm font-medium text-gray-800">
+                <tr key={product.id} className="border-b border-gray-50 hover:bg-gray-50/50 dark:border-gray-700 dark:hover:bg-gray-700/50">
+                  <td className="py-3 px-4 text-sm font-medium text-gray-800 dark:text-gray-100">
                     <div className="flex items-center gap-2">
                       {product.name}
                       {product.stock <= product.minStock && (
@@ -101,8 +101,8 @@ export default function Products() {
                       )}
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-500">{product.sku}</td>
-                  <td className="py-3 px-4 text-sm font-semibold text-gray-800">
+                  <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">{product.sku}</td>
+                  <td className="py-3 px-4 text-sm font-semibold text-gray-800 dark:text-gray-100">
                     {formatRupiah(product.price)}
                   </td>
                   <td className={`py-3 px-4 text-sm font-semibold ${
@@ -110,21 +110,21 @@ export default function Products() {
                   }`}>
                     {product.stock}
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-500 hidden sm:table-cell">{product.minStock}</td>
-                  <td className="py-3 px-4 text-sm text-gray-500 hidden md:table-cell">
+                  <td className="py-3 px-4 text-sm text-gray-500 hidden sm:table-cell dark:text-gray-400">{product.minStock}</td>
+                  <td className="py-3 px-4 text-sm text-gray-500 hidden md:table-cell dark:text-gray-400">
                     {product.cabang?.name || "-"}
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center justify-center gap-2">
                       <Link
                         href={`/products/${product.id}/edit`}
-                        className="p-1.5 rounded hover:bg-blue-50 text-blue-600"
+                        className="p-1.5 rounded hover:bg-blue-50 text-blue-600 dark:hover:bg-blue-900/30"
                       >
                         <Edit className="w-4 h-4" />
                       </Link>
                       <button
                         onClick={() => handleDelete(product.id, product.name)}
-                        className="p-1.5 rounded hover:bg-red-50 text-red-600"
+                        className="p-1.5 rounded hover:bg-red-50 text-red-600 dark:hover:bg-red-900/30"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

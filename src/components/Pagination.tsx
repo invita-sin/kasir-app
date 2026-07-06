@@ -16,7 +16,7 @@ export default function Pagination({ page, totalPages, onPageChange }: Props) {
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
-        className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
@@ -25,14 +25,14 @@ export default function Pagination({ page, totalPages, onPageChange }: Props) {
         .map((p, idx, arr) => (
           <span key={p} className="flex items-center gap-1">
             {idx > 0 && arr[idx - 1] !== p - 1 && (
-              <span className="px-1 text-gray-400">...</span>
+              <span className="px-1 text-gray-400 dark:text-gray-500">...</span>
             )}
             <button
               onClick={() => onPageChange(p)}
               className={`min-w-[32px] h-8 rounded-lg text-sm font-medium ${
                 p === page
                   ? "bg-blue-600 text-white"
-                  : "hover:bg-gray-100 text-gray-600"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
               }`}
             >
               {p}
@@ -42,7 +42,7 @@ export default function Pagination({ page, totalPages, onPageChange }: Props) {
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages}
-        className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
       >
         <ChevronRight className="w-4 h-4" />
       </button>

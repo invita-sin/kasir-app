@@ -78,7 +78,7 @@ export default function StockOutPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Stok Keluar</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Stok Keluar</h1>
         <button
           onClick={() => setShowForm(true)}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
@@ -89,17 +89,17 @@ export default function StockOutPage() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30" onClick={() => setShowForm(false)}>
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 dark:bg-black/60" onClick={() => setShowForm(false)}>
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 dark:bg-gray-800" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold mb-4">Catat Stok Keluar</h2>
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Produk *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Produk *</label>
                 <select
                   required
                   value={form.productId}
                   onChange={(e) => setForm({ ...form, productId: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400"
                 >
                   <option value="">Pilih produk</option>
                   {products?.map((p) => (
@@ -109,37 +109,37 @@ export default function StockOutPage() {
                   ))}
                 </select>
                 {selectedProduct && (
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                     Stok saat ini: <strong>{selectedProduct.stock}</strong>
                   </p>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jumlah *</label>
                 <input
                   type="number"
                   required
                   min={1}
                   value={form.quantity}
                   onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catatan</label>
                 <input
                   type="text"
                   value={form.note}
                   onChange={(e) => setForm({ ...form, note: e.target.value })}
                   placeholder="Misal: rusak, expired, dll"
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400"
                 />
               </div>
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50"
+                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
                 >
                   Batal
                 </button>
@@ -156,14 +156,14 @@ export default function StockOutPage() {
       )}
 
       {isLoading ? (
-        <div className="text-center py-8 text-gray-500">Memuat...</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">Memuat...</div>
       ) : items.length === 0 ? (
-        <div className="text-center py-8 text-gray-400">Tidak ada data</div>
+        <div className="text-center py-8 text-gray-400 dark:text-gray-500">Tidak ada data</div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full bg-white rounded-xl shadow-sm border border-gray-100">
+          <table className="w-full bg-white rounded-xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-sm text-gray-500">
+              <tr className="border-b border-gray-100 text-left text-sm text-gray-500 dark:text-gray-400">
                 <th className="py-3 px-4 font-medium">Produk</th>
                 <th className="py-3 px-4 font-medium">SKU</th>
                 <th className="py-3 px-4 font-medium">Jumlah</th>
@@ -173,12 +173,12 @@ export default function StockOutPage() {
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                  <td className="py-3 px-4 text-sm font-medium text-gray-800">{item.product.name}</td>
-                  <td className="py-3 px-4 text-sm text-gray-500">{item.product.sku}</td>
+                <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50/50 dark:border-gray-700 dark:hover:bg-gray-700/50">
+                  <td className="py-3 px-4 text-sm font-medium text-gray-800 dark:text-gray-100">{item.product.name}</td>
+                  <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">{item.product.sku}</td>
                   <td className="py-3 px-4 text-sm font-semibold text-red-600">-{item.quantity}</td>
-                  <td className="py-3 px-4 text-sm text-gray-500">{item.note || "-"}</td>
-                  <td className="py-3 px-4 text-sm text-gray-500">{formatDate(item.createdAt)}</td>
+                  <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">{item.note || "-"}</td>
+                  <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">{formatDate(item.createdAt)}</td>
                 </tr>
               ))}
             </tbody>
