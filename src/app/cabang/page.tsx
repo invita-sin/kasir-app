@@ -96,28 +96,33 @@ export default function CabangPage() {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+        <table className="w-full text-sm min-w-[600px]">
           <thead className="bg-gray-50 text-gray-600">
             <tr>
               <th className="text-left px-4 py-3 font-medium">Nama</th>
-              <th className="text-left px-4 py-3 font-medium">Nama Aplikasi</th>
-              <th className="text-left px-4 py-3 font-medium">Alamat</th>
-              <th className="text-left px-4 py-3 font-medium">Telepon</th>
+              <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Nama Aplikasi</th>
+              <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Alamat</th>
+              <th className="text-left px-4 py-3 font-medium hidden md:table-cell">Telepon</th>
               <th className="text-center px-4 py-3 font-medium">User</th>
-              <th className="text-center px-4 py-3 font-medium">Produk</th>
+              <th className="text-center px-4 py-3 font-medium hidden sm:table-cell">Produk</th>
               <th className="text-center px-4 py-3 font-medium">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {cabangList.map((cabang) => (
               <tr key={cabang.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium">{cabang.name}</td>
-                <td className="px-4 py-3 text-gray-600">{cabang.appName}</td>
-                <td className="px-4 py-3 text-gray-600">{cabang.address || "-"}</td>
-                <td className="px-4 py-3 text-gray-600">{cabang.phone || "-"}</td>
+                <td className="px-4 py-3 font-medium">
+                  <div className="flex flex-col">
+                    <span>{cabang.name}</span>
+                    <span className="text-xs text-gray-400 sm:hidden">{cabang.appName}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-gray-600 hidden sm:table-cell">{cabang.appName}</td>
+                <td className="px-4 py-3 text-gray-600 hidden md:table-cell max-w-[160px] truncate">{cabang.address || "-"}</td>
+                <td className="px-4 py-3 text-gray-600 hidden md:table-cell">{cabang.phone || "-"}</td>
                 <td className="px-4 py-3 text-center">{cabang._count.users}</td>
-                <td className="px-4 py-3 text-center">{cabang._count.products}</td>
+                <td className="px-4 py-3 text-center hidden sm:table-cell">{cabang._count.products}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-center gap-2">
                     <button
