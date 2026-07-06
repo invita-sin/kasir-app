@@ -88,9 +88,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-gray-50 min-h-screen">
         <Toaster position="top-right" />
         <div className="flex flex-col min-h-screen">
-          <header className="h-12 bg-white border-b border-gray-200 flex items-center px-4 gap-3 no-print shrink-0">
-            <span className="font-bold text-sm text-gray-700 truncate">{cabang?.appName || "Kasir App"}</span>
-            <div className="ml-auto flex items-center gap-2 text-sm text-gray-500">
+          <header className="h-14 bg-white border-b border-gray-200 flex items-center px-4 gap-3 no-print shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <Store className="w-5 h-5 text-blue-600 shrink-0" />
+              <span className="font-bold text-base text-gray-800 truncate">{cabang?.appName || "Kasir App"}</span>
+            </div>
+            <div className="ml-auto flex items-center gap-2 text-sm text-gray-500 shrink-0">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">{username || "User"}</span>
               {role && (
