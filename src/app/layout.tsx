@@ -55,10 +55,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const [cabang, setCabang] = useState<{ name: string; appName: string; address?: string; phone?: string } | null>(null);
 
   useEffect(() => {
+    if (pathname === "/login") {
+      setUsername(""); setRole(""); setCabang(null);
+      return;
+    }
     apiGet<{ id: string; username: string; name: string; role: string; cabang: { name: string; appName: string; address?: string; phone?: string } | null }>("/api/auth/me")
       .then((d) => { setUsername(d.name || d.username); setRole(d.role); setCabang(d.cabang); })
       .catch(() => {});
-  }, []);
+  }, [pathname]);
 
   const handleLogout = async () => {
     try {
