@@ -27,14 +27,6 @@ export function getErrorMessage(error: unknown, defaultMsg?: string): string {
   return defaultMsg || "Terjadi kesalahan yang tidak terduga";
 }
 
-export interface ApiResponse<T> {
-  data: T;
-  total?: number;
-  totalPages?: number;
-  page?: number;
-  limit?: number;
-}
-
 export interface UserData {
   id: string;
   username: string;

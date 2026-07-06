@@ -88,9 +88,6 @@ public class MainActivity extends AppCompatActivity {
                 if (host != null && host.equals(ALLOWED_HOST)) {
                     return false;
                 }
-                if (host != null && host.endsWith(".vercel.app")) {
-                    return false;
-                }
                 android.content.Intent intent = new android.content.Intent(
                         android.content.Intent.ACTION_VIEW, request.getUrl());
                 startActivity(intent);

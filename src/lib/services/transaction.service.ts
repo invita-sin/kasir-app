@@ -31,12 +31,14 @@ export const TransactionService = {
         where: { id },
         data: { status: "voided", voidedAt: new Date(), voidedReason: reason || null },
       });
-      for (const item of sale.items) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { increment: item.quantity } },
-        });
-      }
+      await Promise.all(
+        sale.items.map((item) =>
+          tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { increment: item.quantity } },
+          })
+        )
+      );
     });
 
     return { message: "Transaksi berhasil di-void" };
@@ -130,26 +132,29 @@ export const TransactionService = {
   async create(body: unknown, cabangId: string) {
     const input = createSaleSchema.parse(body);
 
-    const itemsWithProducts = await Promise.all(
-      input.items.map(async (item, i) => {
-        const product = await prisma.product.findUnique({ where: { id: item.productId } });
-        if (!product) throw new NotFoundError(`Item ke-${i + 1}: produk`);
-        if (product.cabangId !== cabangId) throw new NotFoundError(`Item ke-${i + 1}: produk`);
+    const productIds = input.items.map((i) => i.productId);
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds }, cabangId },
+    });
+    const productMap = new Map(products.map((p) => [p.id, p]));
 
-        if (product.stock < item.quantity) {
-          throw new ValidationError(
-            `Stok ${product.name} tidak mencukupi (sisa: ${product.stock}, diminta: ${item.quantity})`
-          );
-        }
+    const itemsWithProducts = input.items.map((item, i) => {
+      const product = productMap.get(item.productId);
+      if (!product) throw new NotFoundError(`Item ke-${i + 1}: produk`);
 
-        return {
-          productId: item.productId,
-          quantity: item.quantity,
-          price: product.price,
-          cost: product.cost,
-        };
-      })
-    );
+      if (product.stock < item.quantity) {
+        throw new ValidationError(
+          `Stok ${product.name} tidak mencukupi (sisa: ${product.stock}, diminta: ${item.quantity})`
+        );
+      }
+
+      return {
+        productId: item.productId,
+        quantity: item.quantity,
+        price: product.price,
+        cost: product.cost,
+      };
+    });
 
     const total = itemsWithProducts.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -172,12 +177,14 @@ export const TransactionService = {
         include: { items: { include: { product: true } } },
       });
 
-      for (const item of newSale.items) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { decrement: item.quantity } },
-        });
-      }
+      await Promise.all(
+        newSale.items.map((item) =>
+          tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { decrement: item.quantity } },
+          })
+        )
+      );
 
       return newSale;
     });

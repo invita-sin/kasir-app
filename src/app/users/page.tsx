@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Edit, Trash2, Store } from "lucide-react";
+import { Plus, Edit, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { usersApi, getErrorMessage, ApiError, apiGet } from "@/lib/api-client";
+import { usersApi, getErrorMessage, apiGet } from "@/lib/api-client";
 import type { UserData, CreateUserInput } from "@/lib/api-client";
 
 function SkeletonRow() {
@@ -48,7 +48,9 @@ export default function Users() {
     try {
       const data = await apiGet<{ id: string; name: string }[]>("/api/cabang");
       setCabangList(data);
-    } catch {}
+    } catch {
+      // Cabang fetch gagal — dropdown cabang tidak tersedia
+    }
   }, []);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -36,12 +36,13 @@ export default function CreateProduct() {
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
-    if (user?.role === "SUPER_ADMIN") {
-      fetch("/api/cabang")
-        .then((res) => res.json())
-        .then((data) => setCabangs(data))
-        .catch(() => {});
-    }
+    if (user?.role !== "SUPER_ADMIN") return;
+    const controller = new AbortController();
+    fetch("/api/cabang", { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data) => setCabangs(data))
+      .catch(() => {});
+    return () => controller.abort();
   }, [user]);
 
   const validate = (): boolean => {

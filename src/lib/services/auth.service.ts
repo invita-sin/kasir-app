@@ -230,7 +230,10 @@ export const AuthService = {
       data.password = await hashPassword(input.password);
       data.tokenVersion = { increment: 1 };
     }
-    if (input.cabangId !== undefined) data.cabangId = input.cabangId;
+    if (input.cabangId !== undefined) {
+      if (updaterRole !== "SUPER_ADMIN") throw new ValidationError("Hanya SUPER_ADMIN yang dapat mengubah cabang user");
+      data.cabangId = input.cabangId;
+    }
 
     return prisma.user.update({
       where: { id },

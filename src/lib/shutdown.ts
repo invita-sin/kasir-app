@@ -3,10 +3,6 @@ import { logger } from "./logger";
 let shutdown = false;
 let initialized = false;
 
-export function isShuttingDown(): boolean {
-  return shutdown;
-}
-
 export function setupGracefulShutdown() {
   if (initialized) return;
   initialized = true;

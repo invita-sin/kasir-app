@@ -25,11 +25,14 @@ export default function EditProduct() {
     description: "",
   });
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
-    fetch(`/api/products/${params.id}`)
+    const controller = new AbortController();
+    setFetchError(false);
+    fetch(`/api/products/${params.id}`, { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => {
         setForm({
@@ -41,7 +44,14 @@ export default function EditProduct() {
           description: data.description || "",
         });
         setLoading(false);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setFetchError(true);
+          setLoading(false);
+        }
       });
+    return () => controller.abort();
   }, [params.id]);
 
   const validate = (): boolean => {
@@ -75,6 +85,11 @@ export default function EditProduct() {
   };
 
   if (loading) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Memuat...</div>;
+  if (fetchError) return (
+    <div className="text-center py-8 text-red-500 dark:text-red-400">
+      Gagal memuat data produk. <button onClick={() => window.location.reload()} className="underline text-blue-500">Muat ulang</button>
+    </div>
+  );
 
   return (
     <div className="max-w-lg mx-auto space-y-5">

@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await parseJsonBody(req);
-    const product = await ProductService.create(body, user.cabangId || "");
+    const product = await ProductService.create(body, user.cabangId || "", user.role);
 
     logger.info({ event: "product.created", requestId, sku: product.sku, id: product.id });
 

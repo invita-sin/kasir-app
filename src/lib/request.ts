@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 export async function parseJsonBody(req: NextRequest): Promise<unknown> {
   try {
@@ -15,9 +15,4 @@ export class JsonParseError extends Error {
   }
 }
 
-export function handleJsonParseError(requestId: string): NextResponse {
-  return NextResponse.json(
-    { error: "Format data tidak valid", code: "INVALID_JSON", requestId },
-    { status: 400 }
-  );
-}
+

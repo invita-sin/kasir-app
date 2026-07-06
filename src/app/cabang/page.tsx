@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api-client";
 import toast from "react-hot-toast";
@@ -18,6 +18,7 @@ export default function CabangPage() {
   const [cabangList, setCabangList] = useState<Cabang[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const mountedRef = useRef(true);
   const [editing, setEditing] = useState<Cabang | null>(null);
   const [form, setForm] = useState({ name: "", address: "", phone: "", appName: "Kasir App" });
   const [saving, setSaving] = useState(false);
@@ -25,15 +26,17 @@ export default function CabangPage() {
   const fetchCabang = async () => {
     try {
       const data = await apiGet<Cabang[]>("/api/cabang");
-      setCabangList(data);
+      if (mountedRef.current) setCabangList(data);
     } catch {
-      toast.error("Gagal memuat data cabang");
+      if (mountedRef.current) toast.error("Gagal memuat data cabang");
     }
-    setLoading(false);
+    if (mountedRef.current) setLoading(false);
   };
 
   useEffect(() => {
+    mountedRef.current = true;
     fetchCabang();
+    return () => { mountedRef.current = false; };
   }, []);
 
   const openCreate = () => {

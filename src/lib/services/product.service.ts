@@ -61,9 +61,9 @@ export const ProductService = {
     return product;
   },
 
-  async create(body: unknown, userCabangId: string) {
+  async create(body: unknown, userCabangId: string, creatorRole?: string) {
     const input = createProductSchema.parse(body);
-    const targetCabangId = input.cabangId || userCabangId;
+    const targetCabangId = creatorRole === "SUPER_ADMIN" && input.cabangId ? input.cabangId : userCabangId;
 
     const existing = await prisma.product.findUnique({ where: { cabangId_sku: { cabangId: targetCabangId, sku: input.sku } } });
     if (existing) throw new ConflictError(`SKU "${input.sku}" sudah digunakan di cabang ini`);

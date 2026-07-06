@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Search, Trash2, Minus, Plus, ShoppingCart, Printer } from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -32,9 +32,9 @@ export default function Cashier() {
   const { user } = useAuth();
   const cabang = user?.cabang ?? null;
 
-  const fetchProducts = useCallback(async () => {
+  const loadProducts = useCallback(async (q: string) => {
     const params = new URLSearchParams({ all: "true" });
-    if (search) params.set("search", search);
+    if (q) params.set("search", q);
     try {
       const data = await apiGet<Product[] | { data: Product[] }>(`/api/products?${params}`);
       setProducts(Array.isArray(data) ? data : (data as { data: Product[] }).data);
@@ -42,11 +42,17 @@ export default function Cashier() {
       // silently fail
     }
     setLoading(false);
-  }, [search]);
+  }, []);
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => loadProducts(search), 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [search, loadProducts]);
+
+  const refreshProducts = useCallback(() => loadProducts(search), [search, loadProducts]);
 
   const addToCart = (product: Product) => {
     if (product.stock <= 0) {
@@ -135,7 +141,7 @@ export default function Cashier() {
       });
       setCart([]);
       toast.success("Transaksi berhasil!");
-      fetchProducts();
+      refreshProducts();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Transaksi gagal");
     }
