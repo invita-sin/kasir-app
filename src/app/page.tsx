@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { formatRupiah, formatDate } from "@/lib/utils";
 import { fetcher } from "@/lib/fetcher";
+import RevenueChart from "@/components/RevenueChart";
 
 interface TopProduct {
   rank: number;
@@ -51,6 +52,12 @@ export default function Dashboard() {
     revalidateOnReconnect: false,
     dedupingInterval: 30000,
   });
+
+  const { data: chartData } = useSWR<{ data: { date: string; count: number; revenue: number }[] }>(
+    "/api/transactions?groupBy=day&page=1&limit=7",
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 }
+  );
 
   if (isLoading) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Memuat...</div>;
 
@@ -108,6 +115,16 @@ export default function Dashboard() {
           </Link>
         ))}
       </div>
+
+      {chartData?.data && chartData.data.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-blue-500" />
+            Pendapatan 7 Hari Terakhir
+          </h2>
+          <RevenueChart data={chartData.data.map((d) => ({ date: d.date, revenue: d.revenue }))} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">

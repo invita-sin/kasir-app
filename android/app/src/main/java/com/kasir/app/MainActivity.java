@@ -1,12 +1,16 @@
 package com.kasir.app;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
@@ -19,10 +23,18 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final String APP_URL = "https://kasir-app-lake.vercel.app";
     private static final String ALLOWED_HOST = "kasir-app-lake.vercel.app";
+    private static final String CURRENT_VERSION = "1.0.1";
 
     private WebView webView;
     private ProgressBar progressBar;
@@ -41,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
         setupWebView();
         setupSwipeRefresh();
         observeNetwork();
+        checkVersion();
 
         webView.loadUrl(APP_URL);
     }
@@ -140,5 +153,50 @@ public class MainActivity extends AppCompatActivity {
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         webView.restoreState(savedInstanceState);
+    }
+
+    private void checkVersion() {
+        new AsyncTask<Void, Void, String>() {
+            @Override
+            protected String doInBackground(Void... params) {
+                try {
+                    URL url = new URL(APP_URL + "/api/version");
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setConnectTimeout(5000);
+                    conn.setReadTimeout(5000);
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) sb.append(line);
+                    reader.close();
+                    return sb.toString();
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+
+            @Override
+            protected void onPostExecute(String json) {
+                if (json == null) return;
+                try {
+                    JSONObject obj = new JSONObject(json);
+                    String latestVersion = obj.getString("version");
+                    String apkUrl = obj.getString("apkUrl");
+                    String releaseNotes = obj.optString("releaseNotes", "");
+
+                    if (!CURRENT_VERSION.equals(latestVersion)) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                        builder.setTitle("Update Tersedia v" + latestVersion);
+                        builder.setMessage(releaseNotes);
+                        builder.setPositiveButton("Download", (dialog, which) -> {
+                            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl));
+                            startActivity(intent);
+                        });
+                        builder.setNegativeButton("Nanti", null);
+                        builder.show();
+                    }
+                } catch (Exception ignored) {}
+            }
+        }.execute();
     }
 }
