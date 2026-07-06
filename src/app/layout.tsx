@@ -10,7 +10,6 @@ import {
   ArrowUpFromLine,
   ShoppingCart,
   History,
-  Menu,
   Store,
   LogOut,
   User,
@@ -48,7 +47,6 @@ const kasirNavItems = [
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [username, setUsername] = useState("");
   const [role, setRole] = useState("");
   const pathname = usePathname();
@@ -67,7 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       await apiPost("/api/auth/logout", {});
       toast.success("Logout berhasil");
       router.push("/login");
-    } catch { 
+    } catch {
       router.push("/login");
     }
   };
@@ -89,17 +87,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="id">
       <body className="bg-gray-50 min-h-screen">
         <Toaster position="top-right" />
-        <div className="flex h-screen overflow-hidden">
-          <aside
-            className={`${
-              sidebarOpen ? "translate-x-0" : "-translate-x-full"
-            } fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transition-transform lg:translate-x-0 lg:static lg:inset-auto`}
-          >
-            <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-200">
-              <Store className="w-6 h-6 text-blue-600" />
-              <span className="font-bold text-lg">{cabang?.appName || "Kasir App"}</span>
+        <div className="flex flex-col min-h-screen">
+          <header className="h-12 bg-white border-b border-gray-200 flex items-center px-4 gap-3 no-print shrink-0">
+            <span className="font-bold text-sm text-gray-700 truncate">{cabang?.appName || "Kasir App"}</span>
+            <div className="ml-auto flex items-center gap-2 text-sm text-gray-500">
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">{username || "User"}</span>
+              {role && (
+                <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${
+                  role === "SUPER_ADMIN" ? "bg-red-100 text-red-700" : role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-green-100 text-green-700"
+                }`}>
+                  {role === "SUPER_ADMIN" ? "SA" : role === "ADMIN" ? "ADM" : role}
+                </span>
+              )}
+              <button onClick={handleLogout} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 ml-1">
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
-            <nav className="p-4 space-y-1">
+          </header>
+          <main className="flex-1 overflow-auto p-4 lg:p-6 pb-20">{children}</main>
+          <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 h-16 safe-area-bottom no-print">
+            <div className="flex items-center justify-around h-full max-w-lg mx-auto px-2">
               {allNavItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
@@ -108,57 +116,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-blue-50 text-blue-700"
-                        : "text-gray-600 hover:bg-gray-100"
+                    className={`flex flex-col items-center justify-center gap-0.5 px-1 py-1 rounded-lg min-w-0 ${
+                      isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"
                     }`}
                   >
-                    <item.icon className="w-5 h-5" />
-                    {item.label}
+                    <item.icon className="w-5 h-5 shrink-0" />
+                    <span className="text-[10px] leading-tight text-center truncate w-full">{item.label}</span>
                   </Link>
                 );
               })}
-            </nav>
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </button>
             </div>
-          </aside>
-          {sidebarOpen && (
-            <div
-              className="fixed inset-0 z-20 bg-black/30 lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            />
-          )}
-          <div className="flex-1 flex flex-col min-w-0">
-            <header className="h-14 bg-white border-b border-gray-200 flex items-center px-4 gap-3 lg:px-6 no-print">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-              <div className="ml-auto flex items-center gap-2 text-sm text-gray-500">
-                <User className="w-4 h-4" />
-                <span>{username || "User"}</span>
-                  {role && (
-                    <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${
-                      role === "SUPER_ADMIN" ? "bg-red-100 text-red-700" : role === "ADMIN" ? "bg-purple-100 text-purple-700" : "bg-green-100 text-green-700"
-                    }`}>
-                      {role === "SUPER_ADMIN" ? "SUPER ADMIN" : role}
-                    </span>
-                  )}
-              </div>
-            </header>
-            <main className="flex-1 overflow-auto p-4 lg:p-6">{children}</main>
-          </div>
+          </nav>
         </div>
       </body>
     </html>
