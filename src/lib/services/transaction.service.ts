@@ -13,15 +13,45 @@ const createSaleSchema = z.object({
 });
 
 export const TransactionService = {
+  async voidSale(id: string, cabangId: string, reason?: string) {
+    const sale = await prisma.sale.findUnique({
+      where: { id },
+      include: {
+        items: {
+          include: { product: { select: { id: true, cabangId: true, stock: true } } },
+        },
+      },
+    });
+    if (!sale) throw new NotFoundError("Transaksi");
+    if (sale.status !== "active") throw new ValidationError("Transaksi sudah di-void sebelumnya");
+    if (sale.items[0]?.product.cabangId !== cabangId) throw new NotFoundError("Transaksi");
+
+    await prisma.$transaction(async (tx) => {
+      await tx.sale.update({
+        where: { id },
+        data: { status: "voided", voidedAt: new Date(), voidedReason: reason || null },
+      });
+      for (const item of sale.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { increment: item.quantity } },
+        });
+      }
+    });
+
+    return { message: "Transaksi berhasil di-void" };
+  },
+
   async getDailySummary(params: { cabangId?: string; page?: number; limit?: number }) {
     const { cabangId } = params;
     const page = Math.max(1, params.page || 1);
     const limit = Math.min(Math.max(1, params.limit || 20), 100);
     const skip = (page - 1) * limit;
 
+    const statusClause = `s.status = 'active'`;
     const existsClause = cabangId
-      ? `WHERE EXISTS (SELECT 1 FROM "SaleItem" si JOIN "Product" p ON p.id = si."productId" WHERE si."saleId" = s.id AND p."cabangId" = $1)`
-      : ``;
+      ? `WHERE ${statusClause} AND EXISTS (SELECT 1 FROM "SaleItem" si JOIN "Product" p ON p.id = si."productId" WHERE si."saleId" = s.id AND p."cabangId" = $1)`
+      : `WHERE ${statusClause}`;
     const existsParam = cabangId ? [cabangId] : [];
 
     const countQuery = `SELECT COUNT(DISTINCT DATE(s."createdAt")) as count FROM "Sale" s ${existsClause}`;
@@ -42,6 +72,7 @@ export const TransactionService = {
     let sales: any[] = [];
     if (dateBounds) {
       const where: Record<string, unknown> = {
+        status: "active",
         createdAt: { gte: new Date(dateBounds.earliest), lte: new Date(dateBounds.latest) },
       };
       if (cabangId) where.items = { some: { product: { cabangId } } };
@@ -78,7 +109,8 @@ export const TransactionService = {
     const limit = all ? 9999 : Math.min(Math.max(1, params.limit || 50), 100);
     const skip = all ? 0 : (page - 1) * limit;
 
-    const where = cabangId ? { items: { some: { product: { cabangId } } } } : {};
+    const where: any = { status: "active" };
+    if (cabangId) where.items = { some: { product: { cabangId } } };
 
     const [data, total] = await prisma.$transaction([
       prisma.sale.findMany({

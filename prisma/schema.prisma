@@ -71,12 +71,16 @@ model StockOut {
 }
 
 model Sale {
-  id        String     @id @default(cuid())
-  total     Float
-  createdAt DateTime   @default(now())
-  items     SaleItem[]
+  id           String     @id @default(cuid())
+  total        Float
+  status       String     @default("active")
+  voidedAt     DateTime?
+  voidedReason String?
+  createdAt    DateTime   @default(now())
+  items        SaleItem[]
 
   @@index([createdAt])
+  @@index([status])
 }
 
 model SaleItem {

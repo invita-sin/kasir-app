@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import useSWR from "swr";
-import { ChevronDown, ChevronUp, CalendarDays } from "lucide-react";
+import useSWR, { useSWRConfig } from "swr";
+import { ChevronDown, ChevronUp, CalendarDays, Ban } from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
 import { fetcher } from "@/lib/fetcher";
 import Pagination from "@/components/Pagination";
+import toast from "react-hot-toast";
+import { useAuth } from "@/lib/auth-context";
 
 interface SaleItem {
   id: string;
@@ -17,6 +19,7 @@ interface SaleItem {
 interface Sale {
   id: string;
   total: number;
+  status: string;
   createdAt: string;
   items: SaleItem[];
 }
@@ -40,15 +43,41 @@ function formatDateID(dateStr: string) {
 }
 
 export default function TransactionHistory() {
+  const { user } = useAuth();
+  const { mutate } = useSWRConfig();
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const [expandedSale, setExpandedSale] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [voidingId, setVoidingId] = useState<string | null>(null);
 
   const { data, isLoading } = useSWR<DailyResponse>(
     `/api/transactions?groupBy=day&page=${page}&limit=20`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 10000 }
   );
+
+  const handleVoid = async (saleId: string) => {
+    if (!confirm("Yakin ingin void transaksi ini? Stok akan dikembalikan.")) return;
+    setVoidingId(saleId);
+    try {
+      const res = await fetch(`/api/transactions/${saleId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: "Void oleh user" }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Gagal void");
+      }
+      toast.success("Transaksi di-void");
+      mutate((key) => typeof key === "string" && key.startsWith("/api/transactions"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal void");
+    }
+    setVoidingId(null);
+  };
+
+  const canVoid = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
   if (isLoading) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Memuat...</div>;
 
@@ -92,16 +121,26 @@ export default function TransactionHistory() {
                         onClick={() => setExpandedSale(expandedSale === sale.id ? null : sale.id)}
                         className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           <span className="text-xs text-gray-400 dark:text-gray-500 w-16 shrink-0">
                             {new Date(sale.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                           </span>
-                          <span className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                          <span className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
                             #{sale.id.slice(-8).toUpperCase()}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0">
                           <span className="text-sm font-semibold text-green-600">{formatRupiah(sale.total)}</span>
+                          {canVoid && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleVoid(sale.id); }}
+                              disabled={voidingId === sale.id}
+                              className="p-1 rounded hover:bg-red-50 text-red-400 hover:text-red-600 disabled:opacity-30"
+                              title="Void transaksi"
+                            >
+                              <Ban className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           {expandedSale === sale.id ? (
                             <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
                           ) : (

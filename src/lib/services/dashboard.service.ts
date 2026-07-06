@@ -16,17 +16,17 @@ export const DashboardService = {
       topProducts,
     ] = await Promise.all([
       prisma.product.count({ where: productWhere }),
-      prisma.sale.count({ where: cabangId ? { items: { some: { product: { cabangId } } } } : {} }),
+      prisma.sale.count({ where: { status: "active", ...(cabangId ? { items: { some: { product: { cabangId } } } } : {}) } }),
       prisma.sale.aggregate({
         _sum: { total: true },
-        where: cabangId ? { items: { some: { product: { cabangId } } } } : {},
+        where: { status: "active", ...(cabangId ? { items: { some: { product: { cabangId } } } } : {}) },
       }),
       prisma.product.findMany({
         where: { ...productWhere, stock: { lte: prisma.product.fields.minStock } },
         orderBy: { stock: "asc" },
       }),
       prisma.sale.findMany({
-        where: cabangId ? { items: { some: { product: { cabangId } } } } : {},
+        where: { status: "active", ...(cabangId ? { items: { some: { product: { cabangId } } } } : {}) },
         include: { items: { include: { product: true } } },
         orderBy: { createdAt: "desc" },
         take: 5,
