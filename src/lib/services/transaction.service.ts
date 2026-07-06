@@ -19,35 +19,38 @@ export const TransactionService = {
     const limit = Math.min(Math.max(1, params.limit || 20), 100);
     const skip = (page - 1) * limit;
 
-    let countQuery: string, dataQuery: string, countParams: unknown[], dataParams: unknown[];
+    const existsClause = cabangId
+      ? `WHERE EXISTS (SELECT 1 FROM "SaleItem" si JOIN "Product" p ON p.id = si."productId" WHERE si."saleId" = s.id AND p."cabangId" = $1)`
+      : ``;
+    const existsParam = cabangId ? [cabangId] : [];
 
-    if (cabangId) {
-      countQuery = `SELECT COUNT(DISTINCT DATE(s."createdAt")) as count FROM "Sale" s JOIN "SaleItem" si ON si."saleId" = s.id JOIN "Product" p ON p.id = si."productId" AND p."cabangId" = $1`;
-      dataQuery = `SELECT DATE(s."createdAt") as date, COUNT(*)::int as count, SUM(s.total) as revenue FROM "Sale" s JOIN "SaleItem" si ON si."saleId" = s.id JOIN "Product" p ON p.id = si."productId" AND p."cabangId" = $1 GROUP BY DATE(s."createdAt") ORDER BY date DESC LIMIT $2 OFFSET $3`;
-      countParams = [cabangId];
-      dataParams = [cabangId, limit, skip];
-    } else {
-      countQuery = `SELECT COUNT(DISTINCT DATE(s."createdAt")) as count FROM "Sale" s`;
-      dataQuery = `SELECT DATE(s."createdAt") as date, COUNT(*)::int as count, SUM(s.total) as revenue FROM "Sale" s GROUP BY DATE(s."createdAt") ORDER BY date DESC LIMIT $1 OFFSET $2`;
-      countParams = [];
-      dataParams = [limit, skip];
-    }
+    const countQuery = `SELECT COUNT(DISTINCT DATE(s."createdAt")) as count FROM "Sale" s ${existsClause}`;
+    const dataQuery = `SELECT DATE(s."createdAt") as date, COUNT(*)::int as count, SUM(s.total) as revenue FROM "Sale" s ${existsClause} GROUP BY DATE(s."createdAt") ORDER BY date DESC LIMIT ${cabangId ? "$2" : "$1"} OFFSET ${cabangId ? "$3" : "$2"}`;
 
-    const countResult = await prisma.$queryRawUnsafe<{ count: bigint }[]>(countQuery, ...countParams);
+    const [countResult, rows] = await Promise.all([
+      prisma.$queryRawUnsafe<{ count: bigint }[]>(countQuery, ...existsParam),
+      prisma.$queryRawUnsafe<{ date: Date; count: bigint; revenue: number }[]>(dataQuery, ...existsParam, limit, skip),
+    ]);
+
     const totalDays = Number(countResult[0]?.count || 0);
-    const rows = await prisma.$queryRawUnsafe<{ date: Date; count: bigint; revenue: number }[]>(dataQuery, ...dataParams);
 
     const dateStrings = rows.map((r) => new Date(r.date).toISOString().split("T")[0]);
-    const earliestDate = dateStrings.length ? dateStrings[dateStrings.length - 1] + "T00:00:00" : undefined;
+    const dateBounds = dateStrings.length
+      ? { earliest: dateStrings[dateStrings.length - 1] + "T00:00:00", latest: dateStrings[0] + "T23:59:59.999Z" }
+      : undefined;
 
-    const sales = earliestDate ? await prisma.sale.findMany({
-      where: {
-        ...(cabangId ? { items: { some: { product: { cabangId } } } } : {}),
-        createdAt: { gte: new Date(earliestDate) },
-      },
-      include: { items: { include: { product: true } } },
-      orderBy: { createdAt: "desc" },
-    }) : [];
+    let sales: any[] = [];
+    if (dateBounds) {
+      const where: Record<string, unknown> = {
+        createdAt: { gte: new Date(dateBounds.earliest), lte: new Date(dateBounds.latest) },
+      };
+      if (cabangId) where.items = { some: { product: { cabangId } } };
+      sales = await prisma.sale.findMany({
+        where: where as any,
+        include: { items: { include: { product: true } } },
+        orderBy: { createdAt: "desc" },
+      });
+    }
 
     const grouped = new Map<string, { date: string; count: number; revenue: number; sales: typeof sales }>();
     for (const r of rows) {
@@ -88,7 +91,7 @@ export const TransactionService = {
       prisma.sale.count({ where }),
     ]);
 
-    if (all) return { data, total: data.length };
+    if (all) return data;
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 

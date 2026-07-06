@@ -8,6 +8,7 @@ const createProductSchema = z.object({
   price: z.coerce.number().positive("Harga harus lebih dari 0"),
   description: z.string().optional().nullable().transform((v) => v?.trim() || null),
   minStock: z.coerce.number().int().min(0).default(0),
+  cabangId: z.string().optional(),
 });
 
 const updateProductSchema = z.object({
@@ -58,10 +59,11 @@ export const ProductService = {
     return product;
   },
 
-  async create(body: unknown, cabangId: string) {
+  async create(body: unknown, userCabangId: string) {
     const input = createProductSchema.parse(body);
+    const targetCabangId = input.cabangId || userCabangId;
 
-    const existing = await prisma.product.findUnique({ where: { cabangId_sku: { cabangId, sku: input.sku } } });
+    const existing = await prisma.product.findUnique({ where: { cabangId_sku: { cabangId: targetCabangId, sku: input.sku } } });
     if (existing) throw new ConflictError(`SKU "${input.sku}" sudah digunakan di cabang ini`);
 
     return prisma.product.create({
@@ -71,7 +73,7 @@ export const ProductService = {
         price: input.price,
         description: input.description ?? null,
         minStock: input.minStock,
-        cabangId,
+        cabangId: targetCabangId,
       },
     });
   },

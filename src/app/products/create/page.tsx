@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { useAuth } from "@/lib/auth-context";
 
 interface FormErrors {
   name?: string;
@@ -12,17 +13,34 @@ interface FormErrors {
   price?: string;
 }
 
+interface CabangOption {
+  id: string;
+  name: string;
+}
+
 export default function CreateProduct() {
   const router = useRouter();
+  const { user } = useAuth();
+  const [cabangs, setCabangs] = useState<CabangOption[]>([]);
   const [form, setForm] = useState({
     name: "",
     sku: "",
     price: "",
     minStock: "0",
     description: "",
+    cabangId: "",
   });
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+
+  useEffect(() => {
+    if (user?.role === "SUPER_ADMIN") {
+      fetch("/api/cabang")
+        .then((res) => res.json())
+        .then((data) => setCabangs(data))
+        .catch(() => {});
+    }
+  }, [user]);
 
   const validate = (): boolean => {
     const errs: FormErrors = {};
@@ -114,6 +132,22 @@ export default function CreateProduct() {
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400"
           />
         </div>
+        {user?.role === "SUPER_ADMIN" && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cabang *</label>
+            <select
+              required
+              value={form.cabangId}
+              onChange={(e) => setForm({ ...form, cabangId: e.target.value })}
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400"
+            >
+              <option value="">Pilih cabang</option>
+              {cabangs.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deskripsi</label>
           <textarea

@@ -10,6 +10,7 @@ export interface JwtPayload {
   name: string;
   cabangId: string | null;
   cabangName: string | null;
+  tokenVersion: number;
   iat: number;
   exp: number;
   type?: string;
@@ -110,10 +111,11 @@ export const AuthService = {
 
     const cabangId = user.cabangId;
     const cabangName = user.cabang?.name || null;
+    const tokenVersion = user.tokenVersion;
 
     const [token, refreshToken] = await Promise.all([
-      this.signToken({ userId: user.id, username: user.username, role: user.role, name: user.name, cabangId, cabangName }, "access"),
-      this.signToken({ userId: user.id, username: user.username, role: user.role, name: user.name, cabangId, cabangName }, "refresh"),
+      this.signToken({ userId: user.id, username: user.username, role: user.role, name: user.name, cabangId, cabangName, tokenVersion }, "access"),
+      this.signToken({ userId: user.id, username: user.username, role: user.role, name: user.name, cabangId, cabangName, tokenVersion }, "refresh"),
     ]);
 
     return {
@@ -122,7 +124,7 @@ export const AuthService = {
     };
   },
 
-  async signToken(payload: { userId: string; username: string; role: string; name: string; cabangId: string | null; cabangName: string | null }, type: "access" | "refresh" = "access"): Promise<string> {
+  async signToken(payload: { userId: string; username: string; role: string; name: string; cabangId: string | null; cabangName: string | null; tokenVersion: number }, type: "access" | "refresh" = "access"): Promise<string> {
     const header = base64UrlEncode(JSON.stringify({ alg: "HS256", typ: "JWT" }));
     const now = Date.now();
     const expMs = type === "refresh"
@@ -139,12 +141,19 @@ export const AuthService = {
       const payload = await this.verifyToken(token);
       if (!payload || payload.type !== "refresh") return null;
 
+      const user = await prisma.user.findUnique({
+        where: { id: payload.userId },
+        select: { tokenVersion: true, cabangId: true, cabang: { select: { name: true } } },
+      });
+      if (!user || user.tokenVersion !== payload.tokenVersion) return null;
+
+      const cabangName = user.cabang?.name || null;
       const newAccess = await this.signToken(
-        { userId: payload.userId, username: payload.username, role: payload.role, name: payload.name, cabangId: payload.cabangId, cabangName: payload.cabangName },
+        { userId: payload.userId, username: payload.username, role: payload.role, name: payload.name, cabangId: user.cabangId, cabangName, tokenVersion: user.tokenVersion },
         "access"
       );
       const newRefresh = await this.signToken(
-        { userId: payload.userId, username: payload.username, role: payload.role, name: payload.name, cabangId: payload.cabangId, cabangName: payload.cabangName },
+        { userId: payload.userId, username: payload.username, role: payload.role, name: payload.name, cabangId: user.cabangId, cabangName, tokenVersion: user.tokenVersion },
         "refresh"
       );
       return { token: newAccess, refreshToken: newRefresh };
@@ -217,7 +226,10 @@ export const AuthService = {
     if (input.username) data.username = input.username;
     if (input.name) data.name = input.name;
     if (input.role) data.role = input.role;
-    if (input.password) data.password = await hashPassword(input.password);
+    if (input.password) {
+      data.password = await hashPassword(input.password);
+      data.tokenVersion = { increment: 1 };
+    }
     if (input.cabangId !== undefined) data.cabangId = input.cabangId;
 
     return prisma.user.update({

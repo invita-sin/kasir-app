@@ -33,7 +33,7 @@ export const StockService = {
       prisma.stockIn.count({ where: { product: { cabangId } } }),
     ]);
 
-    if (all) return { data, total: data.length };
+    if (all) return data;
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
@@ -76,7 +76,7 @@ export const StockService = {
       prisma.stockOut.count({ where: { product: { cabangId } } }),
     ]);
 
-    if (all) return { data, total: data.length };
+    if (all) return data;
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 

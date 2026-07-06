@@ -74,6 +74,8 @@ model Sale {
   total     Float
   createdAt DateTime   @default(now())
   items     SaleItem[]
+
+  @@index([createdAt])
 }
 
 model SaleItem {

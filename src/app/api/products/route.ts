@@ -50,13 +50,9 @@ export async function POST(req: NextRequest) {
     if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
       return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
     }
-    const cabangId = user.cabangId;
-    if (!cabangId) {
-      return NextResponse.json({ error: "SUPER_ADMIN tidak memiliki cabang", code: "BAD_REQUEST" }, { status: 400 });
-    }
 
     const body = await parseJsonBody(req);
-    const product = await ProductService.create(body, cabangId);
+    const product = await ProductService.create(body, user.cabangId || "");
 
     logger.info({ event: "product.created", requestId, sku: product.sku, id: product.id });
 
