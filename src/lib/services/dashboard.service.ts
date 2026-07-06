@@ -13,6 +13,7 @@ export const DashboardService = {
       recentSales,
       recentStockIn,
       recentStockOut,
+      topProducts,
     ] = await Promise.all([
       prisma.product.count({ where: productWhere }),
       prisma.sale.count({ where: cabangId ? { items: { some: { product: { cabangId } } } } : {} }),
@@ -42,6 +43,27 @@ export const DashboardService = {
         orderBy: { createdAt: "desc" },
         take: 5,
       }),
+      (async () => {
+        const groups = await prisma.saleItem.groupBy({
+          by: ["productId"],
+          _sum: { quantity: true },
+          where: cabangId ? { product: { cabangId } } : {},
+          orderBy: { _sum: { quantity: "desc" } },
+          take: 10,
+        });
+        const productIds = groups.map(g => g.productId);
+        const products = productIds.length ? await prisma.product.findMany({
+          where: { id: { in: productIds } },
+          select: { id: true, name: true },
+        }) : [];
+        const productMap = new Map(products.map(p => [p.id, p.name]));
+        return groups.map((g, i) => ({
+          rank: i + 1,
+          productId: g.productId,
+          name: productMap.get(g.productId) || "Unknown",
+          totalSold: g._sum.quantity || 0,
+        }));
+      })(),
     ]);
 
     totalProductsGauge.set(totalProductsCount);
@@ -60,6 +82,7 @@ export const DashboardService = {
       recentSales,
       recentStockIn,
       recentStockOut,
+      topProducts,
     };
   },
 };

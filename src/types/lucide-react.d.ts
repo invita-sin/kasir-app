@@ -29,4 +29,5 @@ declare module "lucide-react" {
   export const Shield: FC<SVGProps<SVGSVGElement>>;
   export const SunIcon: FC<SVGProps<SVGSVGElement>>;
   export const MoonIcon: FC<SVGProps<SVGSVGElement>>;
+  export const CalendarDays: FC<SVGProps<SVGSVGElement>>;
 }

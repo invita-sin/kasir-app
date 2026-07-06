@@ -12,6 +12,13 @@ import Link from "next/link";
 import { formatRupiah, formatDate } from "@/lib/utils";
 import { fetcher } from "@/lib/fetcher";
 
+interface TopProduct {
+  rank: number;
+  productId: string;
+  name: string;
+  totalSold: number;
+}
+
 interface DashboardData {
   totalProducts: number;
   totalSales: number;
@@ -35,6 +42,7 @@ interface DashboardData {
     createdAt: string;
     product: { name: string };
   }[];
+  topProducts: TopProduct[];
 }
 
 export default function Dashboard() {
@@ -169,18 +177,23 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
-          <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">Stok Keluar Terbaru</h2>
-          {data.recentStockOut.length === 0 ? (
-            <p className="text-gray-400 dark:text-gray-500 text-sm">Belum ada stok keluar</p>
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-amber-500" />
+            Menu Favorit
+          </h2>
+          {data.topProducts.length === 0 ? (
+            <p className="text-gray-400 dark:text-gray-500 text-sm">Belum ada data penjualan</p>
           ) : (
             <div className="space-y-3">
-              {data.recentStockOut.map((item) => (
-                <div key={item.id} className="flex justify-between items-center border-b border-gray-50 dark:border-gray-700 pb-2">
-                  <div>
-                    <p className="text-sm font-medium dark:text-gray-200">{item.product.name}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">{formatDate(item.createdAt)}</p>
+              {data.topProducts.map((product) => (
+                <div key={product.productId} className="flex justify-between items-center border-b border-gray-50 dark:border-gray-700 pb-2">
+                  <div className="flex items-center gap-3">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${product.rank <= 3 ? 'bg-amber-500' : 'bg-gray-400 dark:bg-gray-500'}`}>
+                      {product.rank}
+                    </span>
+                    <p className="text-sm font-medium dark:text-gray-200">{product.name}</p>
                   </div>
-                  <span className="text-sm font-semibold text-red-600">-{item.quantity}</span>
+                  <span className="text-sm font-semibold text-blue-600">{product.totalSold} terjual</span>
                 </div>
               ))}
             </div>

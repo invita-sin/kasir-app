@@ -13,6 +13,62 @@ const createSaleSchema = z.object({
 });
 
 export const TransactionService = {
+  async getDailySummary(params: { cabangId?: string; page?: number; limit?: number }) {
+    const { cabangId } = params;
+    const page = Math.max(1, params.page || 1);
+    const limit = Math.min(Math.max(1, params.limit || 20), 100);
+    const skip = (page - 1) * limit;
+
+    let countQuery: string, dataQuery: string, countParams: unknown[], dataParams: unknown[];
+
+    if (cabangId) {
+      countQuery = `SELECT COUNT(DISTINCT DATE(s."createdAt")) as count FROM "Sale" s JOIN "SaleItem" si ON si."saleId" = s.id JOIN "Product" p ON p.id = si."productId" AND p."cabangId" = $1`;
+      dataQuery = `SELECT DATE(s."createdAt") as date, COUNT(*)::int as count, SUM(s.total) as revenue FROM "Sale" s JOIN "SaleItem" si ON si."saleId" = s.id JOIN "Product" p ON p.id = si."productId" AND p."cabangId" = $1 GROUP BY DATE(s."createdAt") ORDER BY date DESC LIMIT $2 OFFSET $3`;
+      countParams = [cabangId];
+      dataParams = [cabangId, limit, skip];
+    } else {
+      countQuery = `SELECT COUNT(DISTINCT DATE(s."createdAt")) as count FROM "Sale" s`;
+      dataQuery = `SELECT DATE(s."createdAt") as date, COUNT(*)::int as count, SUM(s.total) as revenue FROM "Sale" s GROUP BY DATE(s."createdAt") ORDER BY date DESC LIMIT $1 OFFSET $2`;
+      countParams = [];
+      dataParams = [limit, skip];
+    }
+
+    const countResult = await prisma.$queryRawUnsafe<{ count: bigint }[]>(countQuery, ...countParams);
+    const totalDays = Number(countResult[0]?.count || 0);
+    const rows = await prisma.$queryRawUnsafe<{ date: Date; count: bigint; revenue: number }[]>(dataQuery, ...dataParams);
+
+    const dateStrings = rows.map((r) => new Date(r.date).toISOString().split("T")[0]);
+    const earliestDate = dateStrings.length ? dateStrings[dateStrings.length - 1] + "T00:00:00" : undefined;
+
+    const sales = earliestDate ? await prisma.sale.findMany({
+      where: {
+        ...(cabangId ? { items: { some: { product: { cabangId } } } } : {}),
+        createdAt: { gte: new Date(earliestDate) },
+      },
+      include: { items: { include: { product: true } } },
+      orderBy: { createdAt: "desc" },
+    }) : [];
+
+    const grouped = new Map<string, { date: string; count: number; revenue: number; sales: typeof sales }>();
+    for (const r of rows) {
+      const key = new Date(r.date).toISOString().split("T")[0];
+      grouped.set(key, { date: key, count: Number(r.count), revenue: Number(r.revenue), sales: [] });
+    }
+    for (const s of sales) {
+      const key = new Date(s.createdAt).toISOString().split("T")[0];
+      const day = grouped.get(key);
+      if (day) day.sales.push(s);
+    }
+
+    return {
+      data: Array.from(grouped.values()).sort((a, b) => b.date.localeCompare(a.date)),
+      totalDays,
+      page,
+      limit,
+      totalPages: Math.ceil(totalDays / limit),
+    };
+  },
+
   async list(params: { page?: number; limit?: number; all?: boolean; cabangId?: string }) {
     const { all, cabangId } = params;
     const page = all ? 1 : Math.max(1, params.page || 1);

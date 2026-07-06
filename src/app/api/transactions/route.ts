@@ -16,9 +16,22 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
+    const groupBy = searchParams.get("groupBy");
     const all = searchParams.get("all") === "true";
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
-    const limit = Math.max(1, parseInt(searchParams.get("limit") || "50", 10) || 50);
+    const limit = Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20);
+
+    if (groupBy === "day") {
+      const result = await TransactionService.getDailySummary({
+        cabangId: user.cabangId || undefined,
+        page,
+        limit,
+      });
+      const response = NextResponse.json(result);
+      httpRequestsTotal.inc({ method: "GET", path: "/api/transactions", status: response.status });
+      httpRequestDurationSeconds.observe({ method: "GET", path: "/api/transactions" }, (Date.now() - start) / 1000);
+      return response;
+    }
 
     const result = await TransactionService.list({ page, limit, all, cabangId: user.cabangId || undefined });
 
