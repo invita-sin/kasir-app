@@ -57,13 +57,14 @@ export default function TransactionHistory() {
   );
 
   const handleVoid = async (saleId: string) => {
-    if (!confirm("Yakin ingin void transaksi ini? Stok akan dikembalikan.")) return;
+    const reason = prompt("Alasan void (wajib diisi):");
+    if (!reason || !reason.trim()) return;
     setVoidingId(saleId);
     try {
       const res = await fetch(`/api/transactions/${saleId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: "Void oleh user" }),
+        body: JSON.stringify({ reason: reason.trim() }),
       });
       if (!res.ok) {
         const err = await res.json();

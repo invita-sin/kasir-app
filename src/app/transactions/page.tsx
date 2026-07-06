@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Search, Trash2, Minus, Plus, ShoppingCart, Printer } from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
 import { apiGet, apiPost } from "@/lib/api-client";
 import toast from "react-hot-toast";
 
@@ -28,13 +29,8 @@ export default function Cashier() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [lastSale, setLastSale] = useState<{ id: string; total: number; items: CartItem[] } | null>(null);
-  const [cabang, setCabang] = useState<{ name: string; appName: string; address?: string; phone?: string } | null>(null);
-
-  useEffect(() => {
-    apiGet<{ cabang: { name: string; appName: string; address?: string; phone?: string } | null }>("/api/auth/me")
-      .then((d) => setCabang(d.cabang))
-      .catch(() => {});
-  }, []);
+  const { user } = useAuth();
+  const cabang = user?.cabang ?? null;
 
   const fetchProducts = useCallback(async () => {
     const params = new URLSearchParams({ all: "true" });
@@ -223,7 +219,7 @@ export default function Cashier() {
 
             <div className="text-center mt-4 text-xs text-gray-400 dark:text-gray-500">
               <p>Terima kasih atas kunjungan Anda</p>
-              <p>Barang yang sudah dibeli tidak dapat dikembalikan</p>
+              <p>Barang yang sudah dibeli dapat diretur sesuai ketentuan</p>
               <p className="mt-1 font-mono">--- LUNAS ---</p>
             </div>
 

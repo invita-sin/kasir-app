@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { Plus } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { fetcher } from "@/lib/fetcher";
+import { apiPost } from "@/lib/api-client";
 import Pagination from "@/components/Pagination";
 import toast from "react-hot-toast";
 
@@ -51,20 +52,14 @@ export default function StockIn() {
       toast.error("Lengkapi form dengan benar");
       return;
     }
-    const res = await fetch("/api/stock-in", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-
-    if (res.ok) {
+    try {
+      await apiPost("/api/stock-in", form);
       toast.success("Stok masuk berhasil dicatat");
       setShowForm(false);
       setForm({ productId: "", quantity: "", note: "" });
       mutate();
-    } else {
-      const data = await res.json();
-      toast.error(data.error || "Gagal mencatat stok masuk");
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal mencatat stok masuk");
     }
   };
 
