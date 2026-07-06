@@ -5,6 +5,7 @@ export interface ProductData {
   name: string;
   sku: string;
   price: number;
+  cost: number;
   stock: number;
   minStock: number;
   description: string | null;
@@ -36,7 +37,8 @@ export interface SaleItemData {
   productId: string;
   quantity: number;
   price: number;
-  product: { id: string; name: string; sku: string; price: number };
+  cost: number;
+  product: { id: string; name: string; sku: string; price: number; cost: number };
 }
 
 export interface SaleData {
@@ -57,6 +59,7 @@ export interface PaginatedResponse<T> {
 export interface DashboardData {
   totalProducts: number;
   totalSales: number;
+  totalProfit: number;
   totalRevenue: number;
   lowStockProducts: { id: string; name: string; stock: number; minStock: number }[];
   recentSales: SaleData[];

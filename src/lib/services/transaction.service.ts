@@ -146,6 +146,7 @@ export const TransactionService = {
           productId: item.productId,
           quantity: item.quantity,
           price: product.price,
+          cost: product.cost,
         };
       })
     );
@@ -160,11 +161,12 @@ export const TransactionService = {
         data: {
           total,
           items: {
-            create: itemsWithProducts.map((item) => ({
-              productId: item.productId,
-              quantity: item.quantity,
-              price: item.price,
-            })),
+              create: itemsWithProducts.map((item) => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                price: item.price,
+                cost: item.cost,
+              })),
           },
         },
         include: { items: { include: { product: true } } },

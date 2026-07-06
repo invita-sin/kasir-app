@@ -10,6 +10,7 @@ interface FormErrors {
   name?: string;
   sku?: string;
   price?: string;
+  cost?: string;
 }
 
 export default function EditProduct() {
@@ -19,6 +20,7 @@ export default function EditProduct() {
     name: "",
     sku: "",
     price: "",
+    cost: "",
     minStock: "0",
     description: "",
   });
@@ -34,6 +36,7 @@ export default function EditProduct() {
           name: data.name,
           sku: data.sku,
           price: String(data.price),
+          cost: String(data.cost ?? 0),
           minStock: String(data.minStock),
           description: data.description || "",
         });
@@ -122,6 +125,19 @@ export default function EditProduct() {
             }`}
           />
           {errors.price && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{errors.price}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Harga Beli (Modal)</label>
+          <input
+            type="number"
+            min={0}
+            value={form.cost}
+            onChange={(e) => { setForm({ ...form, cost: e.target.value }); setErrors({ ...errors, cost: undefined }); }}
+            className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 ${
+              errors.cost ? "border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-500" : "border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            }`}
+          />
+          {errors.cost && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{errors.cost}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Minimal Stok</label>

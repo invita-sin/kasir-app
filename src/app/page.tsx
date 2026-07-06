@@ -7,6 +7,7 @@ import {
   DollarSign,
   AlertTriangle,
   TrendingUp,
+  PiggyBank,
 } from "lucide-react";
 import Link from "next/link";
 import { formatRupiah, formatDate } from "@/lib/utils";
@@ -23,6 +24,7 @@ interface TopProduct {
 interface DashboardData {
   totalProducts: number;
   totalSales: number;
+  totalProfit: number;
   totalRevenue: number;
   lowStockProducts: { id: string; name: string; stock: number; minStock: number }[];
   recentSales: {
@@ -83,6 +85,13 @@ export default function Dashboard() {
       value: formatRupiah(data.totalRevenue),
       icon: DollarSign,
       color: "bg-purple-500",
+      href: "/transactions/history",
+    },
+    {
+      label: "Total Laba",
+      value: formatRupiah(data.totalProfit),
+      icon: PiggyBank,
+      color: "bg-teal-500",
       href: "/transactions/history",
     },
     {

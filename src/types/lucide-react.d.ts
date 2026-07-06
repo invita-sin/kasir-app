@@ -31,4 +31,5 @@ declare module "lucide-react" {
   export const MoonIcon: FC<SVGProps<SVGSVGElement>>;
   export const CalendarDays: FC<SVGProps<SVGSVGElement>>;
   export const Ban: FC<SVGProps<SVGSVGElement>>;
+  export const PiggyBank: FC<SVGProps<SVGSVGElement>>;
 }

@@ -13,7 +13,8 @@ interface SaleItem {
   id: string;
   quantity: number;
   price: number;
-  product: { name: string; sku: string; price: number };
+  cost: number;
+  product: { name: string; sku: string; price: number; cost: number };
 }
 
 interface Sale {
@@ -28,6 +29,7 @@ interface DailySummary {
   date: string;
   count: number;
   revenue: number;
+  profit: number;
   sales: Sale[];
 }
 
@@ -84,6 +86,9 @@ export default function TransactionHistory() {
 
   const days = data?.data || [];
 
+  const calcDayProfit = (sales: Sale[]) =>
+    sales.reduce((sum, s) => sum + s.items.reduce((s2, i) => s2 + (i.price - i.cost) * i.quantity, 0), 0);
+
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Riwayat Transaksi</h1>
@@ -92,7 +97,9 @@ export default function TransactionHistory() {
         <div className="text-center py-8 text-gray-400 dark:text-gray-500">Tidak ada transaksi</div>
       ) : (
         <div className="space-y-4">
-          {days.map((day) => (
+          {days.map((day) => {
+            const dayProfit = calcDayProfit(day.sales);
+            return (
             <div key={day.date} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
               <button
                 onClick={() => setExpandedDay(expandedDay === day.date ? null : day.date)}
@@ -106,7 +113,10 @@ export default function TransactionHistory() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-bold text-green-600">{formatRupiah(day.revenue)}</span>
+                  <div className="text-right">
+                    <p className="font-bold text-green-600">{formatRupiah(day.revenue)}</p>
+                    <p className="text-xs text-blue-500">{formatRupiah(dayProfit)} laba</p>
+                  </div>
                   {expandedDay === day.date ? (
                     <ChevronUp className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                   ) : (
@@ -168,7 +178,8 @@ export default function TransactionHistory() {
                 </div>
               )}
             </div>
-          ))}
+          );
+          })}
           <Pagination page={page} totalPages={data?.totalPages || 1} onPageChange={setPage} />
         </div>
       )}

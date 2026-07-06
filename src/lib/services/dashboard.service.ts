@@ -69,9 +69,17 @@ export const DashboardService = {
     totalProductsGauge.set(totalProductsCount);
     lowStockGauge.set(lowStockProductsData.length);
 
+    // Compute profit: sum of (price - cost) * quantity per item
+    const profitItems = await prisma.saleItem.findMany({
+      where: { sale: { status: "active" } },
+      select: { price: true, cost: true, quantity: true },
+    });
+    const totalProfit = profitItems.reduce((sum, item) => sum + (item.price - item.cost) * item.quantity, 0);
+
     return {
       totalProducts: totalProductsCount,
       totalSales,
+      totalProfit,
       totalRevenue: totalRevenue._sum.total || 0,
       lowStockProducts: lowStockProductsData.map((p) => ({
         id: p.id,

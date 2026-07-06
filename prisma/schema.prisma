@@ -41,6 +41,7 @@ model Product {
   sku         String
   description String?
   price       Float
+  cost        Float    @default(0)
   stock       Int      @default(0)
   minStock    Int      @default(0)
   createdAt   DateTime @default(now())
@@ -91,4 +92,5 @@ model SaleItem {
   product   Product @relation(fields: [productId], references: [id])
   quantity  Int
   price     Float
+  cost      Float    @default(0)
 }

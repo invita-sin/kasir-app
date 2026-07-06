@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 
 interface CabangInfo { id: string; name: string; }
 interface Product {
-  id: string; name: string; sku: string; price: number;
+  id: string; name: string; sku: string; price: number; cost: number;
   stock: number; minStock: number; description: string | null;
   cabang?: CabangInfo;
 }
@@ -83,7 +83,8 @@ export default function Products() {
               <tr className="border-b border-gray-100 text-left text-sm text-gray-500 dark:text-gray-400">
                 <th className="py-3 px-4 font-medium">Nama</th>
                 <th className="py-3 px-4 font-medium">SKU</th>
-                <th className="py-3 px-4 font-medium">Harga</th>
+                <th className="py-3 px-4 font-medium">Harga Jual</th>
+                <th className="py-3 px-4 font-medium">Modal</th>
                 <th className="py-3 px-4 font-medium">Stok</th>
                 <th className="py-3 px-4 font-medium hidden sm:table-cell">Min Stok</th>
                 <th className="py-3 px-4 font-medium hidden md:table-cell">Cabang</th>
@@ -104,6 +105,9 @@ export default function Products() {
                   <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">{product.sku}</td>
                   <td className="py-3 px-4 text-sm font-semibold text-gray-800 dark:text-gray-100">
                     {formatRupiah(product.price)}
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">
+                    {product.cost ? formatRupiah(product.cost) : "-"}
                   </td>
                   <td className={`py-3 px-4 text-sm font-semibold ${
                     product.stock <= product.minStock ? "text-red-600" : "text-green-600"
