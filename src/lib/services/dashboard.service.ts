@@ -69,13 +69,16 @@ export const DashboardService = {
     totalProductsGauge.set(totalProductsCount);
     lowStockGauge.set(lowStockProductsData.length);
 
-    // Compute profit: sum of (price - cost) * quantity per item
-    const profitWhere = cabangId ? { sale: { status: "active" }, product: { cabangId } } : { sale: { status: "active" } };
-    const profitItems = await prisma.saleItem.findMany({
-      where: profitWhere,
-      select: { price: true, cost: true, quantity: true },
-    });
-    const totalProfit = profitItems.reduce((sum, item) => sum + (item.price - item.cost) * item.quantity, 0);
+    const profitResult = await (cabangId
+      ? prisma.$queryRawUnsafe<{ profit: number }[]>(
+          `SELECT COALESCE(SUM((si.price - si.cost) * si.quantity), 0) as profit FROM "SaleItem" si JOIN "Sale" s ON s.id = si."saleId" JOIN "Product" p ON p.id = si."productId" WHERE s.status = 'active' AND p."cabangId" = $1`,
+          cabangId
+        )
+      : prisma.$queryRawUnsafe<{ profit: number }[]>(
+          `SELECT COALESCE(SUM((si.price - si.cost) * si.quantity), 0) as profit FROM "SaleItem" si JOIN "Sale" s ON s.id = si."saleId" WHERE s.status = 'active'`
+        )
+    );
+    const totalProfit = Number(profitResult[0]?.profit || 0);
 
     return {
       totalProducts: totalProductsCount,
