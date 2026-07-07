@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AuthService } from "@/lib/services/auth.service";
 import { prisma } from "@/lib/prisma";
-import { logger, generateRequestId } from "@/lib/logger";
+import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
-export async function GET(req: NextRequest) {
-  const requestId = generateRequestId();
-
+export const GET = withApiHandler(async (req, _ctx, requestId) => {
   const token = req.cookies.get("token")?.value;
   if (!token) {
     return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
@@ -34,4 +33,4 @@ export async function GET(req: NextRequest) {
     cabangId: payload.cabangId,
     cabang,
   });
-}
+}, "GET", "/api/auth/me");

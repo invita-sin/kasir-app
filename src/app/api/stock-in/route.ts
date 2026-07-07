@@ -1,68 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { StockService } from "@/lib/services/stock.service";
 import { getUser } from "@/lib/get-user";
-import { handleApiError } from "@/lib/errors";
-import { logger, generateRequestId } from "@/lib/logger";
-import { httpRequestsTotal, httpRequestDurationSeconds } from "@/lib/metrics";
+import { logger } from "@/lib/logger";
 import { parseJsonBody } from "@/lib/request";
+import { withApiHandler } from "@/lib/api-handler";
 
-export async function GET(req: NextRequest) {
-  const requestId = generateRequestId();
-  const start = Date.now();
-  try {
-    const user = await getUser(req);
-    if (!user || !user.cabangId) {
-      return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
-    }
-    if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
-      return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
-    }
-
-    const { searchParams } = new URL(req.url);
-    const all = searchParams.get("all") === "true";
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
-    const limit = Math.max(1, parseInt(searchParams.get("limit") || "50", 10) || 50);
-
-    const result = await StockService.listStockIn({ page, limit, all, cabangId: user.cabangId });
-    logger.debug({ event: "stock_in.list", requestId, all, total: Array.isArray(result) ? result.length : result.total });
-
-    const response = NextResponse.json(result);
-    httpRequestsTotal.inc({ method: "GET", path: "/api/stock-in", status: response.status });
-    httpRequestDurationSeconds.observe({ method: "GET", path: "/api/stock-in" }, (Date.now() - start) / 1000);
-    return response;
-  } catch (error) {
-    const duration = (Date.now() - start) / 1000;
-    httpRequestsTotal.inc({ method: "GET", path: "/api/stock-in", status: 500 });
-    httpRequestDurationSeconds.observe({ method: "GET", path: "/api/stock-in" }, duration);
-    return handleApiError(error, requestId);
+export const GET = withApiHandler(async (req) => {
+  const user = await getUser(req);
+  if (!user || !user.cabangId) {
+    return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
   }
-}
-
-export async function POST(req: NextRequest) {
-  const requestId = generateRequestId();
-  const start = Date.now();
-  try {
-    const user = await getUser(req);
-    if (!user || !user.cabangId) {
-      return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
-    }
-    if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
-      return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
-    }
-
-    const body = await parseJsonBody(req);
-    const stockIn = await StockService.createStockIn(body, user.cabangId);
-
-    logger.info({ event: "stock_in.created", requestId, productId: stockIn.productId, quantity: stockIn.quantity });
-
-    const response = NextResponse.json(stockIn, { status: 201 });
-    httpRequestsTotal.inc({ method: "POST", path: "/api/stock-in", status: 201 });
-    httpRequestDurationSeconds.observe({ method: "POST", path: "/api/stock-in" }, (Date.now() - start) / 1000);
-    return response;
-  } catch (error) {
-    const duration = (Date.now() - start) / 1000;
-    httpRequestsTotal.inc({ method: "POST", path: "/api/stock-in", status: 500 });
-    httpRequestDurationSeconds.observe({ method: "POST", path: "/api/stock-in" }, duration);
-    return handleApiError(error, requestId);
+  if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+    return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
   }
-}
+
+  const { searchParams } = new URL(req.url);
+  const all = searchParams.get("all") === "true";
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+  const limit = Math.max(1, parseInt(searchParams.get("limit") || "50", 10) || 50);
+
+  const result = await StockService.listStockIn({ page, limit, all, cabangId: user.cabangId });
+
+  return NextResponse.json(result);
+}, "GET", "/api/stock-in");
+
+export const POST = withApiHandler(async (req) => {
+  const user = await getUser(req);
+  if (!user || !user.cabangId) {
+    return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
+  }
+  if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+    return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
+  }
+
+  const body = await parseJsonBody(req);
+  const stockIn = await StockService.createStockIn(body, user.cabangId);
+
+  logger.info({ event: "stock_in.created", productId: stockIn.productId, quantity: stockIn.quantity });
+
+  return NextResponse.json(stockIn, { status: 201 });
+}, "POST", "/api/stock-in");
