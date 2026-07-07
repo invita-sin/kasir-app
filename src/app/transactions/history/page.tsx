@@ -73,7 +73,7 @@ export default function TransactionHistory() {
         throw new Error(err.error || "Gagal void");
       }
       toast.success("Transaksi di-void");
-      mutate((key) => typeof key === "string" && key.startsWith("/api/transactions"));
+      mutate((key) => typeof key === "string" && (key.startsWith("/api/transactions") || key === "/api/dashboard"));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal void");
     }

@@ -47,7 +47,7 @@ export const DashboardService = {
         const groups = await prisma.saleItem.groupBy({
           by: ["productId"],
           _sum: { quantity: true },
-          where: cabangId ? { product: { cabangId } } : {},
+          where: { sale: { status: "active" }, ...(cabangId ? { product: { cabangId } } : {}) },
           orderBy: { _sum: { quantity: "desc" } },
           take: 10,
         });
