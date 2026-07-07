@@ -48,8 +48,13 @@ export default function ProductForm({ mode, productId, initialData }: ProductFor
     cost: "",
     minStock: "0",
     description: "",
-    ...(user?.role === "SUPER_ADMIN" ? { cabangId: "" } : {}),
   });
+
+  useEffect(() => {
+    if (user?.role === "SUPER_ADMIN" && !("cabangId" in form)) {
+      setForm((prev) => ({ ...prev, cabangId: "" }));
+    }
+  }, [user]);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 

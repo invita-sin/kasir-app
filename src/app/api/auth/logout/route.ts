@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { config } from "@/lib/config";
-import { logger, generateRequestId } from "@/lib/logger";
+import { logger } from "@/lib/logger";
+import { withApiHandler } from "@/lib/api-handler";
 
-export async function POST(_req: NextRequest) {
-  const requestId = generateRequestId();
-
+export const POST = withApiHandler(async (_req, _ctx, requestId) => {
   logger.info({ event: "auth.logout", requestId });
 
   const clearCookie = {
@@ -20,4 +19,4 @@ export async function POST(_req: NextRequest) {
   response.cookies.set("refreshToken", "", clearCookie);
 
   return response;
-}
+}, "POST", "/api/auth/logout");

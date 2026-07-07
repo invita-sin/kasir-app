@@ -24,7 +24,7 @@ export const TransactionService = {
     });
     if (!sale) throw new NotFoundError("Transaksi");
     if (sale.status !== "active") throw new ValidationError("Transaksi sudah di-void sebelumnya");
-    if (sale.items[0]?.product.cabangId !== cabangId) throw new NotFoundError("Transaksi");
+    if (sale.items.some((item) => item.product.cabangId !== cabangId)) throw new NotFoundError("Transaksi");
 
     await prisma.$transaction(async (tx) => {
       await tx.sale.update({
