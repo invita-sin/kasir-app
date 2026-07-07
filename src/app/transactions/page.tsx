@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Search, Trash2, Minus, Plus, ShoppingCart, Printer } from "lucide-react";
+import { Search, Trash2, Minus, Plus, ShoppingCart, Printer, WifiOff, Clock } from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { apiGet, apiPost } from "@/lib/api-client";
+import { queueTransaction } from "@/lib/db";
 import toast from "react-hot-toast";
 
 interface Product {
@@ -29,6 +30,7 @@ export default function Cashier() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [lastSale, setLastSale] = useState<{ id: string; total: number; items: CartItem[] } | null>(null);
+  const [queuedCart, setQueuedCart] = useState<CartItem[] | null>(null);
   const { user } = useAuth();
   const cabang = user?.cabang ?? null;
 
@@ -122,13 +124,13 @@ export default function Cashier() {
     }
     setCheckoutLoading(true);
 
+    const cartItems = cart.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    }));
+
     try {
-      const sale = await apiPost<SaleResponse>("/api/transactions", {
-        items: cart.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-        })),
-      });
+      const sale = await apiPost<SaleResponse>("/api/transactions", { items: cartItems });
       setLastSale({
         id: sale.id,
         total: sale.total,
@@ -143,7 +145,15 @@ export default function Cashier() {
       toast.success("Transaksi berhasil!");
       refreshProducts();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Transaksi gagal");
+      const msg = err instanceof Error ? err.message : "";
+      if (!navigator.onLine || msg.includes("Failed to fetch")) {
+        await queueTransaction({ items: cartItems });
+        setQueuedCart([...cart]);
+        setCart([]);
+        toast.success("Transaksi disimpan. Akan dikirim saat online kembali.");
+      } else {
+        toast.error(msg || "Transaksi gagal");
+      }
     }
     setCheckoutLoading(false);
   };
@@ -154,7 +164,37 @@ export default function Cashier() {
 
   const handleNewTransaction = () => {
     setLastSale(null);
+    setQueuedCart(null);
   };
+
+  if (queuedCart) {
+    const itemCount = queuedCart.reduce((sum, i) => sum + i.quantity, 0);
+    const queuedTotal = queuedCart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    return (
+      <div className="max-w-sm mx-auto mt-8 text-center space-y-4">
+        <div className="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-8 border border-amber-200 dark:border-amber-700">
+          <Clock className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+          <h2 className="text-lg font-bold text-amber-800 dark:text-amber-200 mb-2">Transaksi Disimpan</h2>
+          <p className="text-sm text-amber-600 dark:text-amber-400 mb-4">
+            Transaksi akan dikirim otomatis saat koneksi tersedia kembali.
+          </p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-left space-y-2 mb-4">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{itemCount} item</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatRupiah(queuedTotal)}</p>
+            {queuedCart.map((item, i) => (
+              <div key={i} className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                <span>{item.name} x{item.quantity}</span>
+                <span>{formatRupiah(item.price * item.quantity)}</span>
+              </div>
+            ))}
+          </div>
+          <button onClick={handleNewTransaction} className="w-full py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium text-sm">
+            Transaksi Baru
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (lastSale) {
     const itemCount = lastSale.items.reduce((sum, i) => sum + i.quantity, 0);

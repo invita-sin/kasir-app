@@ -32,4 +32,7 @@ declare module "lucide-react" {
   export const CalendarDays: FC<SVGProps<SVGSVGElement>>;
   export const Ban: FC<SVGProps<SVGSVGElement>>;
   export const PiggyBank: FC<SVGProps<SVGSVGElement>>;
+  export const WifiOff: FC<SVGProps<SVGSVGElement>>;
+  export const Clock: FC<SVGProps<SVGSVGElement>>;
+  export const CloudUpload: FC<SVGProps<SVGSVGElement>>;
 }

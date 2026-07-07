@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -21,6 +22,8 @@ import toast from "react-hot-toast";
 import { apiPost } from "@/lib/api-client";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { ThemeProvider, useTheme } from "@/lib/theme-context";
+import OfflineBanner from "@/components/OfflineBanner";
+import { registerSW } from "@/lib/sw-register";
 import "./globals.css";
 
 const superAdminNavItems = [
@@ -54,6 +57,8 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => { registerSW(); }, []);
 
   const handleLogout = async () => {
     try {
@@ -108,6 +113,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
               </button>
             </div>
           </header>
+          <OfflineBanner />
           <main className="flex-1 overflow-auto p-4 lg:p-6 pb-20">{children}</main>
           <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700 h-16 safe-area-bottom no-print">
             <div className="flex items-center justify-around h-full max-w-lg mx-auto px-2">
