@@ -1,3 +1,5 @@
+import { setApiCache, getApiCache } from "./db";
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -84,7 +86,19 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
-  return apiFetch<T>(path);
+  try {
+    const data = await apiFetch<T>(path);
+    if (path.startsWith("/api/") && !path.includes("/auth/")) {
+      setApiCache(path, data).catch(() => {});
+    }
+    return data;
+  } catch (err) {
+    if (path.startsWith("/api/") && !path.includes("/auth/")) {
+      const cached = await getApiCache<T>(path);
+      if (cached !== null) return cached;
+    }
+    throw err;
+  }
 }
 
 export async function apiPost<T>(path: string, data: unknown): Promise<T> {

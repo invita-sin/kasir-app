@@ -5,7 +5,7 @@ import { Search, Trash2, Minus, Plus, ShoppingCart, Printer, WifiOff, Clock } fr
 import { formatRupiah } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { apiGet, apiPost } from "@/lib/api-client";
-import { queueTransaction, saveProducts, getCachedProducts, type CachedProduct } from "@/lib/db";
+import { queueTransaction, saveProducts, getCachedProducts } from "@/lib/db";
 import toast from "react-hot-toast";
 
 interface Product {
@@ -43,12 +43,13 @@ export default function Cashier() {
       setProducts(products);
       saveProducts(products.map((p) => ({ id: p.id, name: p.name, sku: p.sku, price: p.price, stock: p.stock })));
     } catch {
-      // offline — load from IndexedDB
+      const cached = await getCachedProducts();
       if (!q) {
-        const cached = await getCachedProducts();
-        if (cached.length > 0) {
-          setProducts(cached);
-        }
+        if (cached.length > 0) setProducts(cached);
+      } else {
+        const qLower = q.toLowerCase();
+        const filtered = cached.filter((p) => p.name.toLowerCase().includes(qLower) || p.sku.toLowerCase().includes(qLower));
+        setProducts(filtered);
       }
     }
     setLoading(false);

@@ -5,8 +5,14 @@ interface PendingTransaction {
   retries: number;
 }
 
+interface ApiCacheEntry {
+  url: string;
+  data: unknown;
+  cachedAt: number;
+}
+
 const DB_NAME = "KasirOfflineDB";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -19,6 +25,10 @@ function openDB(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains("product-catalog")) {
         db.createObjectStore("product-catalog", { keyPath: "id" });
+      }
+      if (!db.objectStoreNames.contains("api-cache")) {
+        const store = db.createObjectStore("api-cache", { keyPath: "url" });
+        store.createIndex("cachedAt", "cachedAt", { unique: false });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -116,10 +126,51 @@ export async function getCachedProducts(): Promise<CachedProduct[]> {
   const store = tx.objectStore("product-catalog");
   const all = store.getAll();
   return new Promise((resolve, reject) => {
-    all.onsuccess = () => resolve(all.result.map((p: any) => {
+    all.onsuccess = () => resolve(all.result.map((p: Record<string, unknown>) => {
       const { _cachedAt, ...product } = p;
-      return product as CachedProduct;
+      return product as unknown as CachedProduct;
     }));
     all.onerror = () => reject(all.error);
   });
+}
+
+// --- Generic API Cache ---
+
+export async function setApiCache(url: string, data: unknown): Promise<void> {
+  const db = await openDB();
+  const tx = db.transaction("api-cache", "readwrite");
+  const store = tx.objectStore("api-cache");
+  const count = await new Promise<number>((resolve, reject) => {
+    const req = store.count();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  if (count >= 50) {
+    const index = store.index("cachedAt");
+    const cursor = await new Promise<IDBCursorWithValue | null>((resolve, reject) => {
+      const req = index.openCursor(null, "next");
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    if (cursor) {
+      store.delete(cursor.primaryKey);
+    }
+  }
+  store.put({ url, data, cachedAt: Date.now() } satisfies ApiCacheEntry);
+  await new Promise<void>((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+export async function getApiCache<T>(url: string): Promise<T | null> {
+  const db = await openDB();
+  const tx = db.transaction("api-cache", "readonly");
+  const store = tx.objectStore("api-cache");
+  const result = await new Promise<ApiCacheEntry | undefined>((resolve, reject) => {
+    const req = store.get(url);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return result?.data as T ?? null;
 }
