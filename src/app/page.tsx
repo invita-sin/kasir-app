@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import useSWR from "swr";
 import {
   Package,
@@ -8,6 +9,7 @@ import {
   AlertTriangle,
   TrendingUp,
   PiggyBank,
+  CalendarDays,
 } from "lucide-react";
 import Link from "next/link";
 import { formatRupiah, formatDate } from "@/lib/utils";
@@ -49,11 +51,32 @@ interface DashboardData {
 }
 
 export default function Dashboard() {
-  const { data, error, isLoading } = useSWR<DashboardData>("/api/dashboard", fetcher, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    dedupingInterval: 30000,
-  });
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [debouncedStartDate, setDebouncedStartDate] = useState("");
+  const [debouncedEndDate, setDebouncedEndDate] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedStartDate(startDate);
+      setDebouncedEndDate(endDate);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [startDate, endDate]);
+
+  const queryParams = debouncedStartDate || debouncedEndDate
+    ? `?startDate=${debouncedStartDate}&endDate=${debouncedEndDate}`
+    : "";
+
+  const { data, error, isLoading } = useSWR<DashboardData>(
+    `/api/dashboard${queryParams}`,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 30000,
+    }
+  );
 
   const { data: chartData } = useSWR<{ data: { date: string; count: number; revenue: number }[] }>(
     "/api/transactions?groupBy=day&page=1&limit=7",
@@ -64,6 +87,11 @@ export default function Dashboard() {
   if (isLoading) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Memuat...</div>;
 
   if (error || !data) return <div className="text-center py-8 text-red-500">Gagal memuat data</div>;
+
+  const handleReset = () => {
+    setStartDate("");
+    setEndDate("");
+  };
 
   const cards = [
     {
@@ -105,7 +133,39 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Dashboard</h1>
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Dashboard</h1>
+        <div className="flex items-center gap-3 flex-wrap">
+          <CalendarDays className="w-5 h-5 text-gray-400" />
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <span className="text-gray-400">—</span>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {(startDate || endDate) && (
+            <button
+              onClick={handleReset}
+              className="px-3 py-1.5 text-sm text-red-600 hover:text-red-700 border border-red-300 hover:border-red-400 rounded-lg transition-colors"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+      </div>
+
+      {(startDate || endDate) && (
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Menampilkan data dari {startDate ? new Date(startDate).toLocaleDateString("id-ID") : "awal"} hingga {endDate ? new Date(endDate).toLocaleDateString("id-ID") : "akhir"}
+        </p>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((card) => (

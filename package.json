@@ -26,6 +26,7 @@
     "react-dom": "^19.2.7",
     "react-hot-toast": "^2.4.1",
     "swr": "^2.4.2",
+    "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {

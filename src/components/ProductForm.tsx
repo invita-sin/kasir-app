@@ -19,6 +19,11 @@ interface CabangOption {
   name: string;
 }
 
+interface CategoryOption {
+  id: string;
+  name: string;
+}
+
 interface ProductFormData {
   name: string;
   sku: string;
@@ -27,6 +32,7 @@ interface ProductFormData {
   minStock: string;
   description: string;
   cabangId?: string;
+  categoryId?: string;
 }
 
 interface ProductFormProps {
@@ -41,6 +47,7 @@ export default function ProductForm({ mode, productId, initialData }: ProductFor
   const isEdit = mode === "edit";
 
   const [cabangs, setCabangs] = useState<CabangOption[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [form, setForm] = useState<ProductFormData>({
     name: "",
     sku: "",
@@ -67,6 +74,15 @@ export default function ProductForm({ mode, productId, initialData }: ProductFor
       .catch(() => {});
     return () => controller.abort();
   }, [user]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/categories", { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data) => setCategories(data))
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (initialData) {
@@ -151,6 +167,15 @@ export default function ProductForm({ mode, productId, initialData }: ProductFor
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Harga Beli (Modal)</label>
           <input type="number" min={0} value={form.cost} onChange={(e) => updateField("cost", e.target.value)} className={inputClass("cost")} />
           {errors.cost && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{errors.cost}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kategori</label>
+          <select value={form.categoryId || ""} onChange={(e) => updateField("categoryId", e.target.value)} className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400">
+            <option value="">Pilih kategori (opsional)</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Minimal Stok</label>

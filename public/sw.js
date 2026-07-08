@@ -2,10 +2,7 @@ const CACHE_NAME = "kasir-cache-v1";
 const API_CACHE = "kasir-api-cache-v1";
 const STATIC_ASSETS = ["/", "/login"];
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)));
-  self.skipWaiting();
-});
+self.addEventListener("install", () => self.skipWaiting());
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
@@ -87,3 +84,39 @@ async function cacheFirst(request) {
     return caches.match("/");
   }
 }
+
+async function checkLowStock() {
+  try {
+    const response = await fetch("/api/dashboard");
+    const data = await response.json();
+    const products = data.lowStockProducts || data.low_stock_products || [];
+    if (products.length > 0) {
+      const title = `Stok Rendah (${products.length})`;
+      const body = products
+        .slice(0, 5)
+        .map((p) => `${p.name || p.nama}: ${p.stock || p.stok}`)
+        .join("\n");
+      self.registration.showNotification(title, {
+        body: products.length > 5 ? `${body}\n...dan ${products.length - 5} lainnya` : body,
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
+        tag: "low-stock",
+        renotify: true,
+      });
+    }
+  } catch (err) {
+    console.error("[SW] checkLowStock error:", err);
+  }
+}
+
+self.addEventListener("message", (event) => {
+  if (event.data === "CHECK_LOW_STOCK") {
+    event.waitUntil(checkLowStock());
+  }
+});
+
+self.addEventListener("periodicsync", (event) => {
+  if (event.tag === "check-low-stock") {
+    event.waitUntil(checkLowStock());
+  }
+});

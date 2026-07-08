@@ -1,6 +1,6 @@
 interface PendingTransaction {
   id?: number;
-  data: { items: { productId: string; quantity: number }[] };
+  data: { items: { productId: string; quantity: number }[]; paymentMethod?: string };
   createdAt: string;
   retries: number;
 }
@@ -38,7 +38,7 @@ function openDB(): Promise<IDBDatabase> {
 
 // --- Pending Transactions ---
 
-export async function queueTransaction(data: { items: { productId: string; quantity: number }[] }): Promise<void> {
+export async function queueTransaction(data: { items: { productId: string; quantity: number }[]; paymentMethod?: string }): Promise<void> {
   const db = await openDB();
   const tx = db.transaction("pending-transactions", "readwrite");
   const store = tx.objectStore("pending-transactions");

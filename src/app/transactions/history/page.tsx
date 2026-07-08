@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import useSWR, { useSWRConfig } from "swr";
-import { ChevronDown, ChevronUp, CalendarDays, Ban } from "lucide-react";
+import { ChevronDown, ChevronUp, CalendarDays, Ban, Download } from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
 import { fetcher } from "@/lib/fetcher";
 import Pagination from "@/components/Pagination";
@@ -21,6 +21,7 @@ interface Sale {
   id: string;
   total: number;
   status: string;
+  paymentMethod: string;
   createdAt: string;
   items: SaleItem[];
 }
@@ -82,6 +83,10 @@ export default function TransactionHistory() {
 
   const canVoid = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
+  const handleExport = useCallback(() => {
+    window.open("/api/export/transactions", "_blank");
+  }, []);
+
   if (isLoading) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Memuat...</div>;
 
   const days = data?.data || [];
@@ -91,7 +96,16 @@ export default function TransactionHistory() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Riwayat Transaksi</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Riwayat Transaksi</h1>
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm font-medium"
+        >
+          <Download className="w-4 h-4" />
+          Export Excel
+        </button>
+      </div>
 
       {days.length === 0 ? (
         <div className="text-center py-8 text-gray-400 dark:text-gray-500">Tidak ada transaksi</div>
@@ -142,6 +156,11 @@ export default function TransactionHistory() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="text-sm font-semibold text-green-600">{formatRupiah(sale.total)}</span>
+                          {sale.paymentMethod && (
+                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400 capitalize">
+                              {sale.paymentMethod}
+                            </span>
+                          )}
                           {canVoid && (
                             <button
                               onClick={(e) => { e.stopPropagation(); handleVoid(sale.id); }}

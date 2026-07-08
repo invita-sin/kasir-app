@@ -31,6 +31,7 @@ export default function Cashier() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [lastSale, setLastSale] = useState<{ id: string; total: number; items: CartItem[] } | null>(null);
   const [queuedCart, setQueuedCart] = useState<CartItem[] | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState("tunai");
   const { user } = useAuth();
   const cabang = user?.cabang ?? null;
 
@@ -139,7 +140,7 @@ export default function Cashier() {
     }));
 
     try {
-      const sale = await apiPost<SaleResponse>("/api/transactions", { items: cartItems });
+      const sale = await apiPost<SaleResponse>("/api/transactions", { items: cartItems, paymentMethod });
       setLastSale({
         id: sale.id,
         total: sale.total,
@@ -156,7 +157,7 @@ export default function Cashier() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       if (!navigator.onLine || msg.includes("Failed to fetch")) {
-        await queueTransaction({ items: cartItems });
+        await queueTransaction({ items: cartItems, paymentMethod });
         setQueuedCart([...cart]);
         setCart([]);
         toast.success("Transaksi disimpan. Akan dikirim saat online kembali.");
@@ -397,6 +398,25 @@ export default function Cashier() {
           <div className="flex justify-between items-center">
             <span className="font-semibold">Total</span>
             <span className="font-bold text-lg text-blue-600">{formatRupiah(total)}</span>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-200 pt-3 mb-4 dark:border-gray-700">
+          <p className="text-xs font-medium text-gray-500 mb-2">Metode Pembayaran</p>
+          <div className="flex gap-2">
+            {["tunai", "transfer", "kartu"].map((method) => (
+              <button
+                key={method}
+                onClick={() => setPaymentMethod(method)}
+                className={`flex-1 py-2 text-xs font-medium rounded-lg border transition-all capitalize ${
+                  paymentMethod === method
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-blue-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
+                }`}
+              >
+                {method}
+              </button>
+            ))}
           </div>
         </div>
 

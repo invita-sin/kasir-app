@@ -10,6 +10,7 @@ const createProductSchema = z.object({
   description: z.string().optional().nullable().transform((v) => v?.trim() || null),
   minStock: z.coerce.number().int().min(0).default(0),
   cabangId: z.string().optional(),
+  categoryId: z.string().optional().nullable(),
 });
 
 const updateProductSchema = z.object({
@@ -19,6 +20,7 @@ const updateProductSchema = z.object({
   cost: z.coerce.number().min(0).optional(),
   description: z.string().optional().nullable().transform((v) => (v === undefined ? undefined : v?.trim() || null)),
   minStock: z.coerce.number().int().min(0).optional(),
+  categoryId: z.string().optional().nullable(),
 });
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;
@@ -37,7 +39,7 @@ export const ProductService = {
       where.OR = [{ name: { contains: search } }, { sku: { contains: search } }];
     }
 
-    const include = { cabang: { select: { id: true, name: true } } };
+    const include = { cabang: { select: { id: true, name: true } }, category: { select: { id: true, name: true } } };
 
     const [data, total] = await prisma.$transaction([
       prisma.product.findMany({
@@ -77,6 +79,7 @@ export const ProductService = {
         description: input.description ?? null,
         minStock: input.minStock,
         cabangId: targetCabangId,
+        categoryId: input.categoryId || null,
       },
     });
   },
@@ -102,6 +105,7 @@ export const ProductService = {
         cost: input.cost !== undefined ? input.cost : existing.cost,
         description: input.description !== undefined ? input.description : existing.description,
         minStock: input.minStock ?? existing.minStock,
+        categoryId: input.categoryId !== undefined ? input.categoryId : existing.categoryId,
       },
     });
   },

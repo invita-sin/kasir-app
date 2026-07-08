@@ -10,6 +10,7 @@ const saleItemSchema = z.object({
 
 const createSaleSchema = z.object({
   items: z.array(saleItemSchema).min(1, "Minimal 1 item diperlukan"),
+  paymentMethod: z.string().optional().default("tunai"),
 });
 
 export const TransactionService = {
@@ -173,6 +174,7 @@ export const TransactionService = {
       const newSale = await tx.sale.create({
         data: {
           total,
+          paymentMethod: input.paymentMethod,
           items: {
               create: itemsWithProducts.map((item) => ({
                 productId: item.productId,

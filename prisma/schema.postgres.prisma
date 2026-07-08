@@ -8,15 +8,16 @@ datasource db {
 }
 
 model Cabang {
-  id        String   @id @default(cuid())
-  name      String
-  address   String?
-  phone     String?
-  appName   String   @default("Kasir App")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  users     User[]
-  products  Product[]
+  id         String     @id @default(cuid())
+  name       String
+  address    String?
+  phone      String?
+  appName    String     @default("Kasir App")
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  users      User[]
+  products   Product[]
+  categories Category[]
 }
 
 model User {
@@ -32,19 +33,33 @@ model User {
   updatedAt    DateTime @updatedAt
 }
 
+model Category {
+  id        String    @id @default(cuid())
+  cabangId  String
+  cabang    Cabang    @relation(fields: [cabangId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  @@unique([cabangId, name])
+}
+
 model Product {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   cabangId    String
-  cabang      Cabang   @relation(fields: [cabangId], references: [id])
+  cabang      Cabang     @relation(fields: [cabangId], references: [id])
+  categoryId  String?
+  category    Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   name        String
   sku         String
   description String?
   price       Float
-  cost        Float    @default(0)
-  stock       Int      @default(0)
-  minStock    Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  cost        Float      @default(0)
+  stock       Int        @default(0)
+  minStock    Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   stockIn     StockIn[]
   stockOut    StockOut[]
   saleItems   SaleItem[]
@@ -71,13 +86,14 @@ model StockOut {
 }
 
 model Sale {
-  id           String     @id @default(cuid())
-  total        Float
-  status       String     @default("active")
-  voidedAt     DateTime?
-  voidedReason String?
-  createdAt    DateTime   @default(now())
-  items        SaleItem[]
+  id             String     @id @default(cuid())
+  total          Float
+  paymentMethod  String     @default("tunai")
+  status         String     @default("active")
+  voidedAt       DateTime?
+  voidedReason   String?
+  createdAt      DateTime   @default(now())
+  items          SaleItem[]
 
   @@index([createdAt])
   @@index([status])

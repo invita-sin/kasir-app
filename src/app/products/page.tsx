@@ -3,17 +3,19 @@
 import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { Plus, Edit, Trash2, Search, AlertTriangle } from "lucide-react";
+import { Plus, Edit, Trash2, Search, AlertTriangle, Folder } from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
 import { fetcher } from "@/lib/fetcher";
 import Pagination from "@/components/Pagination";
 import toast from "react-hot-toast";
 
 interface CabangInfo { id: string; name: string; }
+interface CategoryInfo { id: string; name: string; }
 interface Product {
   id: string; name: string; sku: string; price: number; cost: number;
   stock: number; minStock: number; description: string | null;
   cabang?: CabangInfo;
+  category?: CategoryInfo;
 }
 
 interface ProductsResponse {
@@ -83,6 +85,7 @@ export default function Products() {
               <tr className="border-b border-gray-100 text-left text-sm text-gray-500 dark:text-gray-400">
                 <th className="py-3 px-4 font-medium">Nama</th>
                 <th className="py-3 px-4 font-medium">SKU</th>
+                <th className="py-3 px-4 font-medium">Kategori</th>
                 <th className="py-3 px-4 font-medium">Harga Jual</th>
                 <th className="py-3 px-4 font-medium">Modal</th>
                 <th className="py-3 px-4 font-medium">Stok</th>
@@ -103,6 +106,7 @@ export default function Products() {
                     </div>
                   </td>
                   <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">{product.sku}</td>
+                  <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">{product.category?.name || "-"}</td>
                   <td className="py-3 px-4 text-sm font-semibold text-gray-800 dark:text-gray-100">
                     {formatRupiah(product.price)}
                   </td>

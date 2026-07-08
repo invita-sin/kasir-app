@@ -2,8 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { lowStockProducts as lowStockGauge, totalProducts as totalProductsGauge } from "@/lib/metrics";
 
 export const DashboardService = {
-  async getSummary(cabangId?: string) {
+  async getSummary(cabangId?: string, startDate?: string, endDate?: string) {
     const productWhere = cabangId ? { cabangId } : {};
+
+    const dateFilter = (startDate || endDate) ? {
+      createdAt: {
+        ...(startDate ? { gte: new Date(startDate) } : {}),
+        ...(endDate ? { lte: new Date(endDate) } : {}),
+      }
+    } : {};
 
     const [
       totalProductsCount,
@@ -15,18 +22,18 @@ export const DashboardService = {
       recentStockOut,
       topProducts,
     ] = await Promise.all([
-      prisma.product.count({ where: productWhere }),
-      prisma.sale.count({ where: { status: "active", ...(cabangId ? { items: { some: { product: { cabangId } } } } : {}) } }),
+      prisma.product.count({ where: { ...productWhere, ...dateFilter } }),
+      prisma.sale.count({ where: { status: "active", ...dateFilter, ...(cabangId ? { items: { some: { product: { cabangId } } } } : {}) } }),
       prisma.sale.aggregate({
         _sum: { total: true },
-        where: { status: "active", ...(cabangId ? { items: { some: { product: { cabangId } } } } : {}) },
+        where: { status: "active", ...dateFilter, ...(cabangId ? { items: { some: { product: { cabangId } } } } : {}) },
       }),
       prisma.product.findMany({
-        where: { ...productWhere, stock: { lte: prisma.product.fields.minStock } },
+        where: { ...productWhere, stock: { lte: prisma.product.fields.minStock }, ...dateFilter },
         orderBy: { stock: "asc" },
       }),
       prisma.sale.findMany({
-        where: { status: "active", ...(cabangId ? { items: { some: { product: { cabangId } } } } : {}) },
+        where: { status: "active", ...dateFilter, ...(cabangId ? { items: { some: { product: { cabangId } } } } : {}) },
         include: { items: { include: { product: true } } },
         orderBy: { createdAt: "desc" },
         take: 5,
@@ -47,7 +54,7 @@ export const DashboardService = {
         const groups = await prisma.saleItem.groupBy({
           by: ["productId"],
           _sum: { quantity: true },
-          where: { sale: { status: "active" }, ...(cabangId ? { product: { cabangId } } : {}) },
+          where: { sale: { status: "active", ...dateFilter }, ...(cabangId ? { product: { cabangId } } : {}) },
           orderBy: { _sum: { quantity: "desc" } },
           take: 10,
         });
@@ -69,15 +76,26 @@ export const DashboardService = {
     totalProductsGauge.set(totalProductsCount);
     lowStockGauge.set(lowStockProductsData.length);
 
-    const profitResult = await (cabangId
-      ? prisma.$queryRawUnsafe<{ profit: number }[]>(
-          `SELECT COALESCE(SUM((si.price - si.cost) * si.quantity), 0) as profit FROM "SaleItem" si JOIN "Sale" s ON s.id = si."saleId" JOIN "Product" p ON p.id = si."productId" WHERE s.status = 'active' AND p."cabangId" = $1`,
-          cabangId
-        )
-      : prisma.$queryRawUnsafe<{ profit: number }[]>(
-          `SELECT COALESCE(SUM((si.price - si.cost) * si.quantity), 0) as profit FROM "SaleItem" si JOIN "Sale" s ON s.id = si."saleId" WHERE s.status = 'active'`
-        )
-    );
+    let profitSql = `SELECT COALESCE(SUM((si.price - si.cost) * si.quantity), 0) as profit FROM "SaleItem" si JOIN "Sale" s ON s.id = si."saleId"`;
+    const profitParams: any[] = [];
+
+    if (cabangId) {
+      profitSql += ` JOIN "Product" p ON p.id = si."productId" WHERE s.status = 'active' AND p."cabangId" = $1`;
+      profitParams.push(cabangId);
+    } else {
+      profitSql += ` WHERE s.status = 'active'`;
+    }
+
+    if (startDate) {
+      profitSql += ` AND s."createdAt" >= $${profitParams.length + 1}`;
+      profitParams.push(new Date(startDate));
+    }
+    if (endDate) {
+      profitSql += ` AND s."createdAt" <= $${profitParams.length + 1}`;
+      profitParams.push(new Date(endDate));
+    }
+
+    const profitResult = await prisma.$queryRawUnsafe<{ profit: number }[]>(profitSql, ...profitParams);
     const totalProfit = Number(profitResult[0]?.profit || 0);
 
     return {

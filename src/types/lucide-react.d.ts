@@ -35,4 +35,7 @@ declare module "lucide-react" {
   export const WifiOff: FC<SVGProps<SVGSVGElement>>;
   export const Clock: FC<SVGProps<SVGSVGElement>>;
   export const CloudUpload: FC<SVGProps<SVGSVGElement>>;
+  export const FolderTree: FC<SVGProps<SVGSVGElement>>;
+  export const Folder: FC<SVGProps<SVGSVGElement>>;
+  export const Download: FC<SVGProps<SVGSVGElement>>;
 }

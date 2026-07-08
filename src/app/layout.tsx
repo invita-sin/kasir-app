@@ -16,6 +16,7 @@ import {
   Users,
   SunIcon,
   MoonIcon,
+  FolderTree,
 } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
@@ -29,6 +30,7 @@ import "./globals.css";
 const superAdminNavItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/products", label: "Produk", icon: Package },
+  { href: "/categories", label: "Kategori", icon: FolderTree },
   { href: "/stock-in", label: "Stok Masuk", icon: ArrowDownToLine },
   { href: "/stock-out", label: "Stok Keluar", icon: ArrowUpFromLine },
   { href: "/transactions", label: "Kasir", icon: ShoppingCart },
@@ -40,6 +42,7 @@ const superAdminNavItems = [
 const adminNavItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/products", label: "Produk", icon: Package },
+  { href: "/categories", label: "Kategori", icon: FolderTree },
   { href: "/stock-in", label: "Stok Masuk", icon: ArrowDownToLine },
   { href: "/stock-out", label: "Stok Keluar", icon: ArrowUpFromLine },
   { href: "/transactions", label: "Kasir", icon: ShoppingCart },
