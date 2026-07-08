@@ -35,7 +35,7 @@ function addSecurityHeaders(response: NextResponse) {
   return response;
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = new URL(req.url);
 
   if (pathname.startsWith("/_next") || pathname.startsWith("/api/_next")) {

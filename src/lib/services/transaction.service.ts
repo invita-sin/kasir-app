@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { ValidationError, NotFoundError } from "@/lib/errors";
+import { ValidationError, NotFoundError, ForbiddenError } from "@/lib/errors";
 import { salesCreatedTotal, salesRevenueTotal } from "@/lib/metrics";
 import { z } from "zod";
 
@@ -24,7 +24,7 @@ export const TransactionService = {
     });
     if (!sale) throw new NotFoundError("Transaksi");
     if (sale.status !== "active") throw new ValidationError("Transaksi sudah di-void sebelumnya");
-    if (sale.items.some((item) => item.product.cabangId !== cabangId)) throw new NotFoundError("Transaksi");
+    if (sale.items.some((item) => item.product.cabangId !== cabangId)) throw new ForbiddenError("Transaksi bukan milik cabang Anda");
 
     await prisma.$transaction(async (tx) => {
       await tx.sale.update({
@@ -89,6 +89,7 @@ export const TransactionService = {
         where: where as any,
         include: { items: { include: { product: true } } },
         orderBy: { createdAt: "desc" },
+        take: 9999,
       });
     }
 

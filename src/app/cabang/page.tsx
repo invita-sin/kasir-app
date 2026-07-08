@@ -17,20 +17,25 @@ interface Cabang {
 export default function CabangPage() {
   const [cabangList, setCabangList] = useState<Cabang[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isValidating, setIsValidating] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const mountedRef = useRef(true);
   const [editing, setEditing] = useState<Cabang | null>(null);
   const [form, setForm] = useState({ name: "", address: "", phone: "", appName: "Kasir App" });
   const [saving, setSaving] = useState(false);
 
-  const fetchCabang = async () => {
+  const fetchCabang = async (isRefresh = false) => {
+    if (isRefresh) setIsValidating(true);
     try {
       const data = await apiGet<Cabang[]>("/api/cabang");
       if (mountedRef.current) setCabangList(data);
     } catch {
       if (mountedRef.current) toast.error("Gagal memuat data cabang");
     }
-    if (mountedRef.current) setLoading(false);
+    if (mountedRef.current) {
+      setLoading(false);
+      setIsValidating(false);
+    }
   };
 
   useEffect(() => {
@@ -66,7 +71,7 @@ export default function CabangPage() {
         toast.success("Cabang berhasil dibuat");
       }
       setShowModal(false);
-      fetchCabang();
+      fetchCabang(true);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal menyimpan cabang");
     }
@@ -78,13 +83,17 @@ export default function CabangPage() {
     try {
       await apiDelete(`/api/cabang/${cabang.id}`);
       toast.success("Cabang berhasil dihapus");
-      fetchCabang();
+      fetchCabang(true);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal menghapus cabang");
     }
   };
 
   if (loading) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Memuat...</div>;
+
+  if (isValidating) {
+    // show subtle re-fetch indicator
+  }
 
   return (
     <div>

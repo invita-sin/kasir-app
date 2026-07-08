@@ -133,8 +133,17 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && webView.canGoBack()) {
-            webView.goBack();
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (webView.canGoBack()) {
+                webView.goBack();
+                return true;
+            }
+            new AlertDialog.Builder(this)
+                    .setTitle("Keluar Aplikasi")
+                    .setMessage("Apakah Anda yakin ingin keluar?")
+                    .setPositiveButton("Ya", (dialog, which) -> finishAffinity())
+                    .setNegativeButton("Tidak", null)
+                    .show();
             return true;
         }
         return super.onKeyDown(keyCode, event);
