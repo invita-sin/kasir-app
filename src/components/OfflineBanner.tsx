@@ -2,21 +2,22 @@
 
 import { WifiOff, CloudUpload } from "lucide-react";
 import { useOnlineStatus } from "@/lib/use-online-status";
-import { flushPendingTransactions } from "@/lib/db";
+import { flushPending } from "@/lib/sync";
 import toast from "react-hot-toast";
 
 export default function OfflineBanner() {
-  const { isOnline, pendingCount } = useOnlineStatus();
+  const { isOnline, pendingCount, setPendingCount } = useOnlineStatus();
 
   if (isOnline && pendingCount === 0) return null;
 
   const handleSync = async () => {
-    const result = await flushPendingTransactions();
+    const result = await flushPending();
+    setPendingCount(0);
     if (result.flushed > 0) {
       toast.success(`${result.flushed} transaksi berhasil dikirim`);
     }
     if (result.failed > 0) {
-      toast.error(`${result.failed} transaksi gagal dikirim`);
+      toast.error(`${result.failed} transaksi gagal dikirim (sesi mungkin expired)`);
     }
   };
 
@@ -26,17 +27,19 @@ export default function OfflineBanner() {
         ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
         : "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
     }`}>
-      <WifiOff className="w-4 h-4" />
       {isOnline ? (
         <>
+          <CloudUpload className="w-4 h-4" />
           <span>{pendingCount} transaksi menunggu dikirim</span>
           <button onClick={handleSync} className="underline flex items-center gap-1 hover:text-blue-900 dark:hover:text-blue-100">
-            <CloudUpload className="w-3.5 h-3.5" />
             Kirim Sekarang
           </button>
         </>
       ) : (
-        <span>Kamu sedang offline. Transaksi akan disimpan dan dikirim saat online kembali.</span>
+        <>
+          <WifiOff className="w-4 h-4" />
+          <span>Kamu sedang offline. Transaksi akan disimpan dan dikirim saat online kembali.</span>
+        </>
       )}
     </div>
   );

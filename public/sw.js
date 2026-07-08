@@ -44,9 +44,17 @@ async function staleWhileRevalidate(request) {
   const fetchPromise = fetch(request.clone()).then((response) => {
     if (response.ok) cache.put(request, response.clone());
     return response;
-  }).catch(() => cached);
+  }).catch((err) => { console.error("[SW] fetch failed:", err); return null; });
 
-  return cached || fetchPromise;
+  if (cached) {
+    return cached;
+  }
+
+  const response = await fetchPromise;
+  return response || new Response(JSON.stringify({ error: "Tidak ada koneksi", code: "OFFLINE" }), {
+    status: 503,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 async function networkFirstWithCache(request) {

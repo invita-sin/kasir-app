@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String APP_URL = "https://kasir-app-lake.vercel.app";
     private static final String ALLOWED_HOST = "kasir-app-lake.vercel.app";
-    private static final String CURRENT_VERSION = "1.0.1";
+    private static final String CURRENT_VERSION = "1.1.0";
 
     private WebView webView;
     private ProgressBar progressBar;

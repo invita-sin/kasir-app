@@ -4,5 +4,8 @@ node_modules
 *.db-journal
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .vercel
-.env*
+tsconfig.tsbuildinfo

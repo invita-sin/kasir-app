@@ -50,19 +50,26 @@ export const TransactionService = {
     const limit = Math.min(Math.max(1, params.limit || 20), 100);
     const skip = (page - 1) * limit;
 
-    const statusClause = `s.status = 'active'`;
-    const existsClause = cabangId
-      ? `WHERE ${statusClause} AND EXISTS (SELECT 1 FROM "SaleItem" si JOIN "Product" p ON p.id = si."productId" WHERE si."saleId" = s.id AND p."cabangId" = $1)`
-      : `WHERE ${statusClause}`;
-    const existsParam = cabangId ? [cabangId] : [];
-
-    const countQuery = `SELECT COUNT(DISTINCT DATE(s."createdAt")) as count FROM "Sale" s ${existsClause}`;
-    const dataQuery = `SELECT DATE(s."createdAt") as date, COUNT(*)::int as count, SUM(s.total) as revenue FROM "Sale" s ${existsClause} GROUP BY DATE(s."createdAt") ORDER BY date DESC LIMIT ${cabangId ? "$2" : "$1"} OFFSET ${cabangId ? "$3" : "$2"}`;
-
-    const [countResult, rows] = await Promise.all([
-      prisma.$queryRawUnsafe<{ count: bigint }[]>(countQuery, ...existsParam),
-      prisma.$queryRawUnsafe<{ date: Date; count: bigint; revenue: number }[]>(dataQuery, ...existsParam, limit, skip),
-    ]);
+    const [countResult, rows] = cabangId
+      ? await Promise.all([
+          prisma.$queryRawUnsafe<{ count: bigint }[]>(
+            `SELECT COUNT(DISTINCT DATE(s."createdAt")) as count FROM "Sale" s WHERE s.status = 'active' AND EXISTS (SELECT 1 FROM "SaleItem" si JOIN "Product" p ON p.id = si."productId" WHERE si."saleId" = s.id AND p."cabangId" = $1)`,
+            cabangId
+          ),
+          prisma.$queryRawUnsafe<{ date: Date; count: bigint; revenue: number }[]>(
+            `SELECT DATE(s."createdAt") as date, COUNT(*)::int as count, SUM(s.total) as revenue FROM "Sale" s WHERE s.status = 'active' AND EXISTS (SELECT 1 FROM "SaleItem" si JOIN "Product" p ON p.id = si."productId" WHERE si."saleId" = s.id AND p."cabangId" = $1) GROUP BY DATE(s."createdAt") ORDER BY date DESC LIMIT $2 OFFSET $3`,
+            cabangId, limit, skip
+          ),
+        ])
+      : await Promise.all([
+          prisma.$queryRawUnsafe<{ count: bigint }[]>(
+            `SELECT COUNT(DISTINCT DATE(s."createdAt")) as count FROM "Sale" s WHERE s.status = 'active'`
+          ),
+          prisma.$queryRawUnsafe<{ date: Date; count: bigint; revenue: number }[]>(
+            `SELECT DATE(s."createdAt") as date, COUNT(*)::int as count, SUM(s.total) as revenue FROM "Sale" s WHERE s.status = 'active' GROUP BY DATE(s."createdAt") ORDER BY date DESC LIMIT $1 OFFSET $2`,
+            limit, skip
+          ),
+        ]);
 
     const totalDays = Number(countResult[0]?.count || 0);
 
