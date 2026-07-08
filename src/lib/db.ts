@@ -5,20 +5,28 @@ interface PendingTransaction {
   retries: number;
 }
 
+const DB_NAME = "KasirOfflineDB";
+const DB_VERSION = 2;
+
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open("KasirOfflineDB", 1);
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains("pending-transactions")) {
         const store = db.createObjectStore("pending-transactions", { keyPath: "id", autoIncrement: true });
         store.createIndex("createdAt", "createdAt", { unique: false });
       }
+      if (!db.objectStoreNames.contains("product-catalog")) {
+        db.createObjectStore("product-catalog", { keyPath: "id" });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
+
+// --- Pending Transactions ---
 
 export async function queueTransaction(data: { items: { productId: string; quantity: number }[] }): Promise<void> {
   const db = await openDB();
@@ -77,4 +85,41 @@ export async function flushPendingTransactions(): Promise<{ flushed: number; fai
   }
 
   return { flushed, failed };
+}
+
+// --- Product Catalog ---
+
+export interface CachedProduct {
+  id: string;
+  name: string;
+  sku: string;
+  price: number;
+  stock: number;
+}
+
+export async function saveProducts(products: CachedProduct[]): Promise<void> {
+  const db = await openDB();
+  const tx = db.transaction("product-catalog", "readwrite");
+  const store = tx.objectStore("product-catalog");
+  for (const p of products) {
+    store.put({ ...p, _cachedAt: Date.now() });
+  }
+  await new Promise<void>((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+export async function getCachedProducts(): Promise<CachedProduct[]> {
+  const db = await openDB();
+  const tx = db.transaction("product-catalog", "readonly");
+  const store = tx.objectStore("product-catalog");
+  const all = store.getAll();
+  return new Promise((resolve, reject) => {
+    all.onsuccess = () => resolve(all.result.map((p: any) => {
+      const { _cachedAt, ...product } = p;
+      return product as CachedProduct;
+    }));
+    all.onerror = () => reject(all.error);
+  });
 }
