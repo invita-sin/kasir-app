@@ -22,13 +22,34 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.method === "GET" && url.pathname.startsWith("/api/")) {
-    return event.respondWith(handleApiGet(request));
+    return event.respondWith(handleApiGet(request, url));
   }
 
-  event.respondWith(networkFirstWithCache(request));
+  event.respondWith(cacheFirst(request));
 });
 
-async function handleApiGet(request) {
+const CRITICAL_API_PATHS = ["/api/products", "/api/cabang", "/api/dashboard"];
+
+async function handleApiGet(request, url) {
+  if (CRITICAL_API_PATHS.some((p) => url.pathname === p || url.pathname.startsWith(p + "?"))) {
+    return staleWhileRevalidate(request);
+  }
+  return networkFirstWithCache(request);
+}
+
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(API_CACHE);
+  const cached = await cache.match(request);
+
+  const fetchPromise = fetch(request.clone()).then((response) => {
+    if (response.ok) cache.put(request, response.clone());
+    return response;
+  }).catch(() => cached);
+
+  return cached || fetchPromise;
+}
+
+async function networkFirstWithCache(request) {
   const cache = await caches.open(API_CACHE);
   const cached = await cache.match(request);
 
@@ -45,15 +66,16 @@ async function handleApiGet(request) {
   }
 }
 
-async function networkFirstWithCache(request) {
+async function cacheFirst(request) {
   const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+
   try {
     const response = await fetch(request.clone());
     if (response.ok) cache.put(request, response.clone());
     return response;
   } catch {
-    const cached = await cache.match(request);
-    if (cached) return cached;
     return caches.match("/");
   }
 }
