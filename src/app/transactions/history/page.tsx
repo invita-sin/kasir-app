@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import useSWR, { useSWRConfig } from "swr";
-import { ChevronDown, ChevronUp, CalendarDays, Ban, Download } from "lucide-react";
+import { ChevronDown, ChevronUp, CalendarDays, Ban, Download, Store } from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
 import { fetcher } from "@/lib/fetcher";
 import Pagination from "@/components/Pagination";
@@ -40,6 +40,8 @@ interface DailyResponse {
   totalPages: number;
 }
 
+interface CabangOption { id: string; name: string; }
+
 function formatDateID(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
@@ -52,9 +54,18 @@ export default function TransactionHistory() {
   const [expandedSale, setExpandedSale] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [voidingId, setVoidingId] = useState<string | null>(null);
+  const [cabangFilter, setCabangFilter] = useState("");
+
+  const { data: cabangs } = useSWR<CabangOption[]>(
+    user?.role === "SUPER_ADMIN" ? "/api/cabang" : null,
+    fetcher
+  );
+
+  const queryParams = new URLSearchParams({ groupBy: "day", page: String(page), limit: "20" });
+  if (cabangFilter) queryParams.set("cabangId", cabangFilter);
 
   const { data, isLoading } = useSWR<DailyResponse>(
-    `/api/transactions?groupBy=day&page=${page}&limit=20`,
+    `/api/transactions?${queryParams}`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 10000 }
   );
@@ -96,15 +107,32 @@ export default function TransactionHistory() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Riwayat Transaksi</h1>
-        <button
-          onClick={handleExport}
-          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm font-medium"
-        >
-          <Download className="w-4 h-4" />
-          Export Excel
-        </button>
+        <div className="flex items-center gap-2">
+          {user?.role === "SUPER_ADMIN" && (
+            <div className="relative">
+              <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+              <select
+                value={cabangFilter}
+                onChange={(e) => { setCabangFilter(e.target.value); setPage(1); }}
+                className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400 appearance-none bg-white dark:bg-gray-700"
+              >
+                <option value="">Semua Cabang</option>
+                {cabangs?.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm font-medium"
+          >
+            <Download className="w-4 h-4" />
+            Export Excel
+          </button>
+        </div>
       </div>
 
       {days.length === 0 ? (

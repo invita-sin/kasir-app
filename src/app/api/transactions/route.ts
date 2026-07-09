@@ -12,21 +12,25 @@ export const GET = withApiHandler(async (req) => {
   }
 
   const { searchParams } = new URL(req.url);
+  const cabangId = user.cabangId;
   const groupBy = searchParams.get("groupBy");
   const all = searchParams.get("all") === "true";
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
   const limit = Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20);
 
+  const queryCabangId = searchParams.get("cabangId") || undefined;
+  const effectiveCabangId = user.role === "SUPER_ADMIN" ? queryCabangId : (cabangId || undefined);
+
   if (groupBy === "day") {
     const result = await TransactionService.getDailySummary({
-      cabangId: user.cabangId || undefined,
+      cabangId: effectiveCabangId,
       page,
       limit,
     });
     return NextResponse.json(result);
   }
 
-  const result = await TransactionService.list({ page, limit, all, cabangId: user.cabangId || undefined });
+  const result = await TransactionService.list({ page, limit, all, cabangId: effectiveCabangId });
 
   return NextResponse.json(result);
 }, "GET", "/api/transactions");

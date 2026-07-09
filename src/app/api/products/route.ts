@@ -18,7 +18,10 @@ export const GET = withApiHandler(async (req) => {
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
   const limit = Math.max(1, parseInt(searchParams.get("limit") || "50", 10) || 50);
 
-  const result = await ProductService.list({ search, page, limit, all, cabangId: cabangId || undefined });
+  const queryCabangId = searchParams.get("cabangId") || undefined;
+  const effectiveCabangId = user.role === "SUPER_ADMIN" ? queryCabangId : (cabangId || undefined);
+
+  const result = await ProductService.list({ search, page, limit, all, cabangId: effectiveCabangId });
 
   return NextResponse.json(result);
 }, "GET", "/api/products");

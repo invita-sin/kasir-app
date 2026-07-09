@@ -3,14 +3,16 @@
 import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { Plus, Edit, Trash2, Search, AlertTriangle, Folder } from "lucide-react";
+import { Plus, Edit, Trash2, Search, AlertTriangle, Folder, Store } from "lucide-react";
 import { formatRupiah } from "@/lib/utils";
 import { fetcher } from "@/lib/fetcher";
+import { useAuth } from "@/lib/auth-context";
 import Pagination from "@/components/Pagination";
 import toast from "react-hot-toast";
 
 interface CabangInfo { id: string; name: string; }
 interface CategoryInfo { id: string; name: string; }
+interface CabangOption { id: string; name: string; }
 interface Product {
   id: string; name: string; sku: string; price: number; cost: number;
   stock: number; minStock: number; description: string | null;
@@ -24,11 +26,19 @@ interface ProductsResponse {
 }
 
 export default function Products() {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [cabangFilter, setCabangFilter] = useState("");
+
+  const { data: cabangs } = useSWR<CabangOption[]>(
+    user?.role === "SUPER_ADMIN" ? "/api/cabang" : null,
+    fetcher
+  );
 
   const params = new URLSearchParams({ page: String(page), limit: "20" });
   if (search) params.set("search", search);
+  if (cabangFilter) params.set("cabangId", cabangFilter);
 
   const { data, isLoading, mutate } = useSWR<ProductsResponse>(
     `/api/products?${params}`,
@@ -63,15 +73,32 @@ export default function Products() {
         </Link>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-        <input
-          type="text"
-          placeholder="Cari produk..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400"
-        />
+      <div className="flex gap-2 items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <input
+            type="text"
+            placeholder="Cari produk..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400"
+          />
+        </div>
+        {user?.role === "SUPER_ADMIN" && (
+          <div className="relative shrink-0">
+            <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <select
+              value={cabangFilter}
+              onChange={(e) => { setCabangFilter(e.target.value); setPage(1); }}
+              className="pl-10 pr-8 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400 appearance-none bg-white dark:bg-gray-700"
+            >
+              <option value="">Semua Cabang</option>
+              {cabangs?.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {isLoading ? (
