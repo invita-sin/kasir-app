@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { logger, generateRequestId } from "./logger";
 import { JsonParseError } from "./request";
 import { ZodError } from "zod";
+import { Prisma } from "@prisma/client";
 
 export class ApiError extends Error {
   constructor(
@@ -84,6 +85,35 @@ export function handleApiError(error: unknown, requestId?: string): NextResponse
     return NextResponse.json(
       { error: error.message, code: error.code, requestId: rid } satisfies ErrorResponse,
       { status: error.statusCode }
+    );
+  }
+
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === "P2002") {
+      logger.warn({ event: "db.unique_constraint", requestId: rid, meta: error.meta });
+      return NextResponse.json(
+        { error: "Data sudah ada", code: "CONFLICT", requestId: rid } satisfies ErrorResponse,
+        { status: 409 }
+      );
+    }
+    if (error.code === "P2025") {
+      return NextResponse.json(
+        { error: "Data tidak ditemukan", code: "NOT_FOUND", requestId: rid } satisfies ErrorResponse,
+        { status: 404 }
+      );
+    }
+    logger.warn({ event: "db.known_error", requestId: rid, code: error.code });
+    return NextResponse.json(
+      { error: "Terjadi kesalahan database", code: "DB_ERROR", requestId: rid } satisfies ErrorResponse,
+      { status: 400 }
+    );
+  }
+
+  if (error instanceof Prisma.PrismaClientValidationError) {
+    logger.warn({ event: "db.validation_error", requestId: rid });
+    return NextResponse.json(
+      { error: "Data yang dikirim tidak valid", code: "VALIDATION_ERROR", requestId: rid } satisfies ErrorResponse,
+      { status: 400 }
     );
   }
 

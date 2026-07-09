@@ -24,7 +24,14 @@ export function setupGracefulShutdown() {
     process.exit(0);
   });
 
-  process.on("SIGINT", () => {
+  process.on("SIGINT", async () => {
+    logger.info({ event: "shutdown.start", signal: "SIGINT" });
+    try {
+      const { prisma } = await import("@/lib/prisma");
+      await prisma.$disconnect();
+    } catch (e) {
+      logger.error({ event: "shutdown.error", error: String(e) });
+    }
     process.exit(0);
   });
 }

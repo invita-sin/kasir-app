@@ -43,7 +43,7 @@ export default function Products() {
   const { data, isLoading, mutate } = useSWR<ProductsResponse>(
     `/api/products?${params}`,
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 10000 }
+    { revalidateOnFocus: false, dedupingInterval: 10000, refreshInterval: 30000 }
   );
 
   const products = data?.data || [];

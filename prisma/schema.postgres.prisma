@@ -99,6 +99,21 @@ model Sale {
   @@index([status])
 }
 
+model AuditLog {
+  id        String   @id @default(cuid())
+  cabangId  String?
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([cabangId])
+  @@index([createdAt])
+  @@index([action])
+}
+
 model SaleItem {
   id        String  @id @default(cuid())
   saleId    String

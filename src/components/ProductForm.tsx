@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useAuth } from "@/lib/auth-context";
+import { apiPost, apiPut } from "@/lib/api-client";
 
 interface FormErrors {
   name?: string;
@@ -77,12 +78,29 @@ export default function ProductForm({ mode, productId, initialData }: ProductFor
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/categories", { signal: controller.signal })
+    const params = new URLSearchParams();
+    if (user?.cabangId) params.set("cabangId", user.cabangId);
+    fetch(`/api/categories?${params}`, { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => setCategories(data))
       .catch(() => {});
     return () => controller.abort();
-  }, []);
+  }, [user?.cabangId]);
+
+  useEffect(() => {
+    if (user?.role !== "SUPER_ADMIN" || !form.cabangId) return;
+    const controller = new AbortController();
+    fetch(`/api/categories?cabangId=${form.cabangId}`, { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data) => {
+        setCategories(data);
+        if (!data.some((c: CategoryOption) => c.id === form.categoryId)) {
+          updateField("categoryId", "");
+        }
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [user?.role, form.cabangId]);
 
   useEffect(() => {
     if (initialData) {
@@ -104,20 +122,16 @@ export default function ProductForm({ mode, productId, initialData }: ProductFor
     if (!validate()) return;
     setSaving(true);
 
-    const url = isEdit ? `/api/products/${productId}` : "/api/products";
-    const method = isEdit ? "PUT" : "POST";
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-
-    if (res.ok) {
+    try {
+      if (isEdit) {
+        await apiPut(`/api/products/${productId}`, form);
+      } else {
+        await apiPost("/api/products", form);
+      }
       toast.success(isEdit ? "Produk berhasil diupdate" : "Produk berhasil dibuat");
       router.push("/products");
-    } else {
-      const data = await res.json();
-      toast.error(data.error || (isEdit ? "Gagal mengupdate produk" : "Gagal membuat produk"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : (isEdit ? "Gagal mengupdate produk" : "Gagal membuat produk"));
       setSaving(false);
     }
   };

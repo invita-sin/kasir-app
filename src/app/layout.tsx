@@ -59,6 +59,32 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => { registerSW(); }, []);
 
+  useEffect(() => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    const checkLowStock = async () => {
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage("CHECK_LOW_STOCK");
+      }
+    };
+
+    const interval = setInterval(checkLowStock, 5 * 60 * 1000);
+    checkLowStock();
+
+    navigator.serviceWorker.ready.then((reg) => {
+      if ("periodicSync" in reg) {
+        (reg as any).periodicSync.register("check-low-stock", {
+          minInterval: 60 * 60 * 1000,
+        }).catch(() => {});
+      }
+    });
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleLogout = async () => {
     try {
       await apiPost("/api/auth/logout", {});

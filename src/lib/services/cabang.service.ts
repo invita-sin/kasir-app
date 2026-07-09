@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NotFoundError, ConflictError } from "@/lib/errors";
+import { AuditService } from "@/lib/services/audit.service";
 import { z } from "zod";
 
 const createCabangSchema = z.object({
@@ -40,17 +41,28 @@ export const CabangService = {
     return cabang;
   },
 
-  async create(body: unknown) {
+  async create(body: unknown, userId?: string) {
     const input = createCabangSchema.parse(body);
-    return prisma.cabang.create({ data: input });
+    const cabang = await prisma.cabang.create({ data: input });
+
+    await AuditService.log({
+      cabangId: cabang.id,
+      userId,
+      action: "cabang.create",
+      entity: "Cabang",
+      entityId: cabang.id,
+      detail: { name: cabang.name },
+    });
+
+    return cabang;
   },
 
-  async update(id: string, body: unknown) {
+  async update(id: string, body: unknown, userId?: string) {
     const existing = await prisma.cabang.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("Cabang");
 
     const input = updateCabangSchema.parse(body);
-    return prisma.cabang.update({
+    const cabang = await prisma.cabang.update({
       where: { id },
       data: {
         name: input.name ?? existing.name,
@@ -59,9 +71,20 @@ export const CabangService = {
         appName: input.appName ?? existing.appName,
       },
     });
+
+    await AuditService.log({
+      cabangId: id,
+      userId,
+      action: "cabang.update",
+      entity: "Cabang",
+      entityId: id,
+      detail: { name: cabang.name },
+    });
+
+    return cabang;
   },
 
-  async delete(id: string) {
+  async delete(id: string, userId?: string) {
     const existing = await prisma.cabang.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("Cabang");
 
@@ -72,6 +95,16 @@ export const CabangService = {
     if (productCount > 0) throw new ConflictError("Cabang masih memiliki produk. Hapus produk terlebih dahulu.");
 
     await prisma.cabang.delete({ where: { id } });
+
+    await AuditService.log({
+      cabangId: id,
+      userId,
+      action: "cabang.delete",
+      entity: "Cabang",
+      entityId: id,
+      detail: { name: existing.name },
+    });
+
     return { message: "Cabang berhasil dihapus" };
   },
 };

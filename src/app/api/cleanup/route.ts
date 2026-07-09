@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireSuperAdmin } from "@/lib/middleware-helpers";
+import { requireSuperAdminOrThrow } from "@/lib/middleware-helpers";
 import { withApiHandler } from "@/lib/api-handler";
 
 export const POST = withApiHandler(async (req) => {
-  const user = await requireSuperAdmin(req);
-  if (!user) {
-    return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
-  }
+  await requireSuperAdminOrThrow(req);
 
   await prisma.saleItem.deleteMany();
   await prisma.sale.deleteMany();

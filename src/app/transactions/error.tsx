@@ -7,6 +7,7 @@ export default function CashierError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  console.error("[CashierError]", error);
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
       <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Gagal Memuat Kasir</h2>

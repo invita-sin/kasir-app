@@ -10,6 +10,8 @@ const rawSchema = z.object({
   CORS_ORIGIN: z.string().default("*"),
   JWT_EXPIRY_HOURS: z.coerce.number().positive().default(0.25),
   JWT_REFRESH_EXPIRY_DAYS: z.coerce.number().positive().default(7),
+  UPSTASH_REDIS_REST_URL: z.string().default(""),
+  UPSTASH_REDIS_REST_TOKEN: z.string().default(""),
 });
 
 function validateCors(parsed: z.infer<typeof rawSchema>): z.infer<typeof rawSchema> {

@@ -71,32 +71,6 @@ export async function removePendingTransaction(id: number): Promise<void> {
   });
 }
 
-export async function flushPendingTransactions(): Promise<{ flushed: number; failed: number }> {
-  const pending = await getPendingTransactions();
-  let flushed = 0;
-  let failed = 0;
-
-  for (const item of pending) {
-    try {
-      const res = await fetch("/api/transactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(item.data),
-      });
-      if (res.ok) {
-        await removePendingTransaction(item.id!);
-        flushed++;
-      } else {
-        failed++;
-      }
-    } catch {
-      failed++;
-    }
-  }
-
-  return { flushed, failed };
-}
-
 // --- Product Catalog ---
 
 export interface CachedProduct {

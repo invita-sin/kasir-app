@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NotFoundError, ValidationError } from "@/lib/errors";
+import { AuditService } from "@/lib/services/audit.service";
 import { stockInTotal, stockOutTotal } from "@/lib/metrics";
 import { z } from "zod";
 
@@ -37,7 +38,7 @@ export const StockService = {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
-  async createStockIn(body: unknown, cabangId: string) {
+  async createStockIn(body: unknown, cabangId: string, userId?: string) {
     const input = stockInSchema.parse(body);
 
     const product = await prisma.product.findUnique({ where: { id: input.productId } });
@@ -55,6 +56,15 @@ export const StockService = {
         data: { stock: { increment: input.quantity } },
       }),
     ]);
+
+    await AuditService.log({
+      cabangId,
+      userId,
+      action: "stock.in",
+      entity: "Product",
+      entityId: input.productId,
+      detail: { quantity: input.quantity, productName: product.name, note: input.note || null },
+    });
 
     return stockIn;
   },
@@ -80,7 +90,7 @@ export const StockService = {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
-  async createStockOut(body: unknown, cabangId: string) {
+  async createStockOut(body: unknown, cabangId: string, userId?: string) {
     const input = stockOutSchema.parse(body);
 
     const product = await prisma.product.findUnique({ where: { id: input.productId } });
@@ -104,6 +114,15 @@ export const StockService = {
         data: { stock: { decrement: input.quantity } },
       }),
     ]);
+
+    await AuditService.log({
+      cabangId,
+      userId,
+      action: "stock.out",
+      entity: "Product",
+      entityId: input.productId,
+      detail: { quantity: input.quantity, productName: product.name, note: input.note || null },
+    });
 
     return stockOut;
   },

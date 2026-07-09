@@ -13,9 +13,11 @@ export async function flushPending(): Promise<{ flushed: number; failed: number 
       flushed++;
     } catch (err) {
       if (err && typeof err === "object" && "status" in err && (err as { status: number }).status === 401) {
+        console.warn("[Sync] removing pending transaction with expired session:", item.id);
         await removePendingTransaction(item.id!);
         failed++;
       } else {
+        console.warn("[Sync] failed to flush pending transaction:", err);
         failed++;
       }
     }

@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ValidationError, NotFoundError, ForbiddenError } from "@/lib/errors";
+import { AuditService } from "@/lib/services/audit.service";
+import { cache } from "@/lib/cache";
 import { salesCreatedTotal, salesRevenueTotal } from "@/lib/metrics";
 import { z } from "zod";
 
@@ -14,7 +16,7 @@ const createSaleSchema = z.object({
 });
 
 export const TransactionService = {
-  async voidSale(id: string, cabangId: string, reason?: string) {
+  async voidSale(id: string, cabangId: string, reason?: string, userId?: string) {
     const sale = await prisma.sale.findUnique({
       where: { id },
       include: {
@@ -40,6 +42,15 @@ export const TransactionService = {
           })
         )
       );
+    });
+
+    await AuditService.log({
+      cabangId,
+      userId,
+      action: "sale.void",
+      entity: "Sale",
+      entityId: id,
+      detail: { total: sale.total, reason: reason || null },
     });
 
     return { message: "Transaksi berhasil di-void" };
@@ -138,7 +149,7 @@ export const TransactionService = {
     return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
-  async create(body: unknown, cabangId: string) {
+  async create(body: unknown, cabangId: string, userId?: string) {
     const input = createSaleSchema.parse(body);
 
     const productIds = input.items.map((i) => i.productId);
@@ -198,6 +209,17 @@ export const TransactionService = {
 
       return newSale;
     });
+
+    await AuditService.log({
+      cabangId,
+      userId,
+      action: "sale.create",
+      entity: "Sale",
+      entityId: sale.id,
+      detail: { total, itemsCount: input.items.length, paymentMethod: input.paymentMethod },
+    });
+
+    cache.clearPrefix("dashboard:");
 
     return sale;
   },

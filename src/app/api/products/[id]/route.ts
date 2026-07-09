@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ProductService } from "@/lib/services/product.service";
-import { getUser } from "@/lib/get-user";
 import { logger } from "@/lib/logger";
 import { parseJsonBody } from "@/lib/request";
 import { withApiHandler } from "@/lib/api-handler";
+import { requireAuthOrThrow } from "@/lib/middleware-helpers";
+import { ForbiddenError } from "@/lib/errors";
 
 export const GET = withApiHandler(async (req, ctx) => {
-  const user = await getUser(req);
-  if (!user || !user.cabangId) {
-    return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
-  }
-
+  const user = await requireAuthOrThrow(req);
+  if (!user.cabangId) throw new ForbiddenError("User tidak memiliki cabang");
   const { id } = await ctx.params;
   const product = await ProductService.getById(id, user.cabangId);
 
@@ -18,17 +16,15 @@ export const GET = withApiHandler(async (req, ctx) => {
 }, "GET", "/api/products/[id]");
 
 export const PUT = withApiHandler(async (req, ctx) => {
-  const user = await getUser(req);
-  if (!user || !user.cabangId) {
-    return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
-  }
+  const user = await requireAuthOrThrow(req);
   if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
-    return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
+    throw new ForbiddenError("Akses hanya untuk Admin");
   }
+  if (!user.cabangId) throw new ForbiddenError("User tidak memiliki cabang");
 
   const { id } = await ctx.params;
   const body = await parseJsonBody(req);
-  const product = await ProductService.update(id, body, user.cabangId);
+  const product = await ProductService.update(id, body, user.cabangId, user.userId);
 
   logger.info({ event: "product.updated", id: product.id, sku: product.sku });
 
@@ -36,16 +32,14 @@ export const PUT = withApiHandler(async (req, ctx) => {
 }, "PUT", "/api/products/[id]");
 
 export const DELETE = withApiHandler(async (req, ctx) => {
-  const user = await getUser(req);
-  if (!user || !user.cabangId) {
-    return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
-  }
+  const user = await requireAuthOrThrow(req);
   if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
-    return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
+    throw new ForbiddenError("Akses hanya untuk Admin");
   }
+  if (!user.cabangId) throw new ForbiddenError("User tidak memiliki cabang");
 
   const { id } = await ctx.params;
-  const result = await ProductService.delete(id, user.cabangId);
+  const result = await ProductService.delete(id, user.cabangId, user.userId);
 
   logger.info({ event: "product.deleted", id });
 

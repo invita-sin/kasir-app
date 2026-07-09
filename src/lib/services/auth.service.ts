@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { config } from "@/lib/config";
 import { UnauthorizedError, NotFoundError, ConflictError, ValidationError } from "@/lib/errors";
+import { AuditService } from "@/lib/services/audit.service";
 import { z } from "zod";
 
 export interface JwtPayload {
@@ -179,7 +180,7 @@ export const AuthService = {
     }
   },
 
-  async createUser(body: unknown, creatorRole?: string) {
+  async createUser(body: unknown, creatorRole?: string, creatorUserId?: string) {
     const input = createUserSchema.parse(body);
     const existing = await prisma.user.findUnique({ where: { username: input.username } });
     if (existing) throw new ConflictError("Username sudah digunakan");
@@ -202,13 +203,24 @@ export const AuthService = {
     };
     if (input.cabangId) data.cabangId = input.cabangId;
 
-    return prisma.user.create({
+    const user = await prisma.user.create({
       data: data as any,
       select: { id: true, username: true, name: true, role: true, cabangId: true, createdAt: true },
     });
+
+    await AuditService.log({
+      cabangId: input.cabangId || null,
+      userId: creatorUserId,
+      action: "user.create",
+      entity: "User",
+      entityId: user.id,
+      detail: { username: user.username, name: user.name, role: user.role },
+    });
+
+    return user;
   },
 
-  async updateUser(id: string, body: unknown, updaterRole?: string) {
+  async updateUser(id: string, body: unknown, updaterRole?: string, updaterUserId?: string) {
     const input = updateUserSchema.parse(body);
     const existing = await prisma.user.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("User");
@@ -235,19 +247,39 @@ export const AuthService = {
       data.cabangId = input.cabangId;
     }
 
-    return prisma.user.update({
+    const user = await prisma.user.update({
       where: { id },
       data,
       select: { id: true, username: true, name: true, role: true, cabangId: true, createdAt: true },
     });
+
+    await AuditService.log({
+      cabangId: user.cabangId || null,
+      userId: updaterUserId,
+      action: "user.update",
+      entity: "User",
+      entityId: id,
+      detail: { username: user.username, role: user.role },
+    });
+
+    return user;
   },
 
-  async deleteUser(id: string) {
+  async deleteUser(id: string, deleterUserId?: string) {
     const existing = await prisma.user.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("User");
     if (existing.role === "SUPER_ADMIN") throw new ValidationError("Tidak dapat menghapus SUPER_ADMIN");
 
     await prisma.user.delete({ where: { id } });
+
+    await AuditService.log({
+      cabangId: existing.cabangId || null,
+      userId: deleterUserId,
+      action: "user.delete",
+      entity: "User",
+      entityId: id,
+      detail: { username: existing.username, name: existing.name, role: existing.role },
+    });
   },
 
   async listUsers(cabangId?: string) {

@@ -18,6 +18,7 @@ export function withApiHandler(handler: RouteHandler, method: string, path: stri
     const start = Date.now();
     try {
       const response = await handler(req, context, requestId);
+      response.headers.set("Cache-Control", "private, no-cache, no-store, must-revalidate");
       httpRequestsTotal.inc({ method, path, status: response.status });
       httpRequestDurationSeconds.observe({ method, path }, (Date.now() - start) / 1000);
       return response;

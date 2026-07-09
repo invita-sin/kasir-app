@@ -17,8 +17,8 @@ export function registerSW() {
           };
         };
       },
-      () => {
-        // silently fail
+      (err) => {
+        console.warn("[SW] registration failed:", err);
       }
     );
   });

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NotFoundError, ValidationError, ConflictError } from "@/lib/errors";
+import { AuditService } from "@/lib/services/audit.service";
 import { z } from "zod";
 
 const createProductSchema = z.object({
@@ -63,14 +64,14 @@ export const ProductService = {
     return product;
   },
 
-  async create(body: unknown, userCabangId: string, creatorRole?: string) {
+  async create(body: unknown, userCabangId: string, creatorRole?: string, userId?: string) {
     const input = createProductSchema.parse(body);
     const targetCabangId = creatorRole === "SUPER_ADMIN" && input.cabangId ? input.cabangId : userCabangId;
 
     const existing = await prisma.product.findUnique({ where: { cabangId_sku: { cabangId: targetCabangId, sku: input.sku } } });
     if (existing) throw new ConflictError(`SKU "${input.sku}" sudah digunakan di cabang ini`);
 
-    return prisma.product.create({
+    const product = await prisma.product.create({
       data: {
         name: input.name,
         sku: input.sku,
@@ -82,9 +83,20 @@ export const ProductService = {
         categoryId: input.categoryId || null,
       },
     });
+
+    await AuditService.log({
+      cabangId: targetCabangId,
+      userId,
+      action: "product.create",
+      entity: "Product",
+      entityId: product.id,
+      detail: { name: product.name, sku: product.sku, price: product.price },
+    });
+
+    return product;
   },
 
-  async update(id: string, body: unknown, cabangId: string) {
+  async update(id: string, body: unknown, cabangId: string, userId?: string) {
     const existing = await prisma.product.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("Produk");
     if (existing.cabangId !== cabangId) throw new NotFoundError("Produk");
@@ -96,7 +108,7 @@ export const ProductService = {
       if (skuExists) throw new ConflictError("SKU sudah digunakan di cabang ini");
     }
 
-    return prisma.product.update({
+    const product = await prisma.product.update({
       where: { id },
       data: {
         name: input.name ?? existing.name,
@@ -108,9 +120,20 @@ export const ProductService = {
         categoryId: input.categoryId !== undefined ? input.categoryId : existing.categoryId,
       },
     });
+
+    await AuditService.log({
+      cabangId,
+      userId,
+      action: "product.update",
+      entity: "Product",
+      entityId: product.id,
+      detail: { name: product.name },
+    });
+
+    return product;
   },
 
-  async delete(id: string, cabangId: string) {
+  async delete(id: string, cabangId: string, userId?: string) {
     const existing = await prisma.product.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError("Produk");
     if (existing.cabangId !== cabangId) throw new NotFoundError("Produk");
@@ -121,6 +144,15 @@ export const ProductService = {
       prisma.saleItem.deleteMany({ where: { productId: id } }),
       prisma.product.delete({ where: { id } }),
     ]);
+
+    await AuditService.log({
+      cabangId,
+      userId,
+      action: "product.delete",
+      entity: "Product",
+      entityId: id,
+      detail: { name: existing.name, sku: existing.sku },
+    });
 
     return { message: "Produk berhasil dihapus" };
   },

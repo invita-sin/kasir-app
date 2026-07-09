@@ -1,3 +1,5 @@
+import { config } from "./config";
+
 type LogLevel = "info" | "warn" | "error" | "debug";
 
 type LogArg = string | { event: string; [key: string]: unknown };
@@ -43,7 +45,7 @@ export const logger = {
   warn: makeLogger("warn", console.warn),
   error: makeLogger("error", console.error),
   debug: (arg: LogArg, meta?: Record<string, unknown>) => {
-    if (process.env.NODE_ENV !== "production") {
+    if (config.NODE_ENV !== "production") {
       debugLogger(arg, meta);
     }
   },

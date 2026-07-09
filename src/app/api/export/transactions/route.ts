@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/middleware-helpers";
+import { requireAdminOrThrow } from "@/lib/middleware-helpers";
 import * as XLSX from "xlsx";
 import { withApiHandler } from "@/lib/api-handler";
 
 export const GET = withApiHandler(async (req: NextRequest) => {
-  const user = await requireAdmin(req);
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+  const user = await requireAdminOrThrow(req);
   const { searchParams } = new URL(req.url);
   const queryCabangId = user.role === "SUPER_ADMIN" ? (searchParams.get("cabangId") || undefined) : undefined;
 

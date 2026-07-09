@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useSWR from "swr";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Store } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
 import { apiPost, apiPut, apiDelete } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
@@ -14,13 +14,32 @@ interface Category {
   _count: { products: number };
 }
 
+interface CabangOption { id: string; name: string; }
+
 export default function CategoriesPage() {
   const { user } = useAuth();
-  const { data: categories, mutate, isLoading } = useSWR<Category[]>("/api/categories", fetcher);
+  const [cabangFilter, setCabangFilter] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const { data: cabangs } = useSWR<CabangOption[]>(
+    user?.role === "SUPER_ADMIN" ? "/api/cabang" : null,
+    fetcher
+  );
+
+  const queryParams = cabangFilter ? `?cabangId=${cabangFilter}` : "";
+  const { data: categories, mutate, isLoading } = useSWR<Category[]>(
+    `/api/categories${queryParams}`,
+    fetcher
+  );
+
+  useEffect(() => {
+    if (cabangs?.length && user?.role !== "SUPER_ADMIN") {
+      setCabangFilter(user?.cabangId || "");
+    }
+  }, [user, cabangs]);
 
   const openCreate = () => {
     setEditing(null);
@@ -45,7 +64,7 @@ export default function CategoriesPage() {
         await apiPut(`/api/categories/${editing.id}`, { name: name.trim() });
         toast.success("Kategori berhasil diperbarui");
       } else {
-        await apiPost("/api/categories", { name: name.trim(), cabangId: user?.cabangId });
+        await apiPost("/api/categories", { name: name.trim(), cabangId: user?.cabangId || cabangFilter });
         toast.success("Kategori berhasil dibuat");
       }
       setShowModal(false);
@@ -73,13 +92,30 @@ export default function CategoriesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Kelola Kategori</h1>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          Tambah Kategori
-        </button>
+        <div className="flex items-center gap-2">
+          {user?.role === "SUPER_ADMIN" && (
+            <div className="relative">
+              <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+              <select
+                value={cabangFilter}
+                onChange={(e) => setCabangFilter(e.target.value)}
+                className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:focus:ring-blue-400 appearance-none bg-white dark:bg-gray-700"
+              >
+                <option value="">Semua Cabang</option>
+                {cabangs?.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Tambah Kategori
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto dark:bg-gray-800 dark:border-gray-700">

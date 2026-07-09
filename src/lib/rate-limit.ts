@@ -1,16 +1,18 @@
+import { config } from "./config";
+
 const inMemoryAttempts = new Map<string, { count: number; resetAt: number }>();
 
 let upstashRatelimit: { limit: (key: string) => Promise<{ success: boolean; remaining: number }> } | null = null;
 
 async function getUpstashRatelimit() {
   if (upstashRatelimit) return upstashRatelimit;
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return null;
+  if (!config.UPSTASH_REDIS_REST_URL || !config.UPSTASH_REDIS_REST_TOKEN) return null;
   try {
     const { Ratelimit } = await import("@upstash/ratelimit");
     const { Redis } = await import("@upstash/redis");
     const redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      url: config.UPSTASH_REDIS_REST_URL,
+      token: config.UPSTASH_REDIS_REST_TOKEN,
     });
     upstashRatelimit = new Ratelimit({
       redis,
@@ -18,7 +20,8 @@ async function getUpstashRatelimit() {
       prefix: "kasir-ratelimit",
     });
     return upstashRatelimit;
-  } catch {
+  } catch (e) {
+    console.warn("[RateLimit] Upstash unavailable, using in-memory:", e);
     return null;
   }
 }

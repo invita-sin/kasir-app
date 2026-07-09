@@ -42,7 +42,7 @@ export const POST = withApiHandler(async (req) => {
   }
 
   const body = await parseJsonBody(req);
-  const sale = await TransactionService.create(body, user.cabangId);
+  const sale = await TransactionService.create(body, user.cabangId, user.userId);
 
   logger.info({ event: "sale.created", id: sale.id, total: sale.total, items: sale.items.length });
 

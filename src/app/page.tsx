@@ -75,13 +75,14 @@ export default function Dashboard() {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       dedupingInterval: 30000,
+      refreshInterval: 30000,
     }
   );
 
   const { data: chartData } = useSWR<{ data: { date: string; count: number; revenue: number }[] }>(
     "/api/transactions?groupBy=day&page=1&limit=7",
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 60000 }
+    { revalidateOnFocus: false, dedupingInterval: 60000, refreshInterval: 60000 }
   );
 
   if (isLoading) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Memuat...</div>;

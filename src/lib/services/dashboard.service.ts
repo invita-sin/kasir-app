@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
+import { cache } from "@/lib/cache";
 import { lowStockProducts as lowStockGauge, totalProducts as totalProductsGauge } from "@/lib/metrics";
 
 export const DashboardService = {
   async getSummary(cabangId?: string, startDate?: string, endDate?: string) {
+    const cacheKey = `dashboard:${cabangId || "all"}:${startDate || ""}:${endDate || ""}`;
     const productWhere = cabangId ? { cabangId } : {};
 
     const dateFilter = (startDate || endDate) ? {
@@ -98,7 +100,7 @@ export const DashboardService = {
     const profitResult = await prisma.$queryRawUnsafe<{ profit: number }[]>(profitSql, ...profitParams);
     const totalProfit = Number(profitResult[0]?.profit || 0);
 
-    return {
+    const result = {
       totalProducts: totalProductsCount,
       totalSales,
       totalProfit,
@@ -114,5 +116,9 @@ export const DashboardService = {
       recentStockOut,
       topProducts,
     };
+
+    cache.set(cacheKey, result, 15000);
+
+    return result;
   },
 };

@@ -3,7 +3,7 @@ import { AuthService } from "@/lib/services/auth.service";
 import { config } from "@/lib/config";
 import { logger } from "@/lib/logger";
 import { parseJsonBody } from "@/lib/request";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, resetRateLimit } from "@/lib/rate-limit";
 import { withApiHandler } from "@/lib/api-handler";
 
 export const POST = withApiHandler(async (req, _ctx, requestId) => {
@@ -20,6 +20,7 @@ export const POST = withApiHandler(async (req, _ctx, requestId) => {
   const result = await AuthService.login(body);
 
   logger.info({ event: "auth.login.success", requestId, username: result.username, role: result.role });
+  resetRateLimit(`login:${ip}`);
 
   const response = NextResponse.json({
     success: true,

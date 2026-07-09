@@ -57,11 +57,17 @@ export default function Cashier() {
   }, []);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => loadProducts(search), 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [search, loadProducts]);
+
+  useEffect(() => {
+    pollRef.current = setInterval(() => loadProducts(search), 30000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [search, loadProducts]);
 
   const refreshProducts = useCallback(() => loadProducts(search), [search, loadProducts]);

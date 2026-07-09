@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ProductService } from "@/lib/services/product.service";
-import { getUser } from "@/lib/get-user";
 import { logger } from "@/lib/logger";
 import { parseJsonBody } from "@/lib/request";
 import { withApiHandler } from "@/lib/api-handler";
+import { requireAuthOrThrow } from "@/lib/middleware-helpers";
+import { ForbiddenError } from "@/lib/errors";
 
 export const GET = withApiHandler(async (req) => {
-  const user = await getUser(req);
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
-  }
+  const user = await requireAuthOrThrow(req);
   const cabangId = user.cabangId;
 
   const { searchParams } = new URL(req.url);
@@ -27,16 +25,13 @@ export const GET = withApiHandler(async (req) => {
 }, "GET", "/api/products");
 
 export const POST = withApiHandler(async (req) => {
-  const user = await getUser(req);
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
-  }
+  const user = await requireAuthOrThrow(req);
   if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
-    return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 });
+    throw new ForbiddenError("Akses hanya untuk Admin");
   }
 
   const body = await parseJsonBody(req);
-  const product = await ProductService.create(body, user.cabangId || "", user.role);
+  const product = await ProductService.create(body, user.cabangId || "", user.role, user.userId);
 
   logger.info({ event: "product.created", sku: product.sku, id: product.id });
 

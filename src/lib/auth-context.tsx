@@ -35,7 +35,7 @@ function saveUser(user: AuthUser | null) {
     } else {
       localStorage.removeItem(STORAGE_KEY);
     }
-  } catch { /* storage full or unavailable */ }
+  } catch (e) { console.error("[AuthContext] saveUser error:", e); }
 }
 
 function loadUser(): AuthUser | null {
@@ -45,7 +45,8 @@ function loadUser(): AuthUser | null {
     const parsed = JSON.parse(raw);
     const { _cachedAt, ...user } = parsed;
     return user as AuthUser;
-  } catch {
+  } catch (e) {
+    console.error("[AuthContext] loadUser error:", e);
     return null;
   }
 }
@@ -63,8 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         saveUser(u);
         setUser(u);
       })
-      .catch(() => {
+      .catch((e) => {
         if (cancelled) return;
+        console.error("[AuthContext] fetch user failed:", e);
         const cached = loadUser();
         setUser(cached);
       })

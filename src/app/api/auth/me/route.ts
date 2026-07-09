@@ -3,17 +3,14 @@ import { AuthService } from "@/lib/services/auth.service";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
+import { UnauthorizedError } from "@/lib/errors";
 
 export const GET = withApiHandler(async (req, _ctx, requestId) => {
   const token = req.cookies.get("token")?.value;
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
-  }
+  if (!token) throw new UnauthorizedError("Silakan login terlebih dahulu");
 
   const payload = await AuthService.verifyToken(token);
-  if (!payload) {
-    return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
-  }
+  if (!payload) throw new UnauthorizedError("Sesi telah berakhir");
 
   let cabang = null;
   if (payload.cabangId) {

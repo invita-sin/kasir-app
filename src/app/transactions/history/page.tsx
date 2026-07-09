@@ -95,8 +95,10 @@ export default function TransactionHistory() {
   const canVoid = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
   const handleExport = useCallback(() => {
-    window.open("/api/export/transactions", "_blank");
-  }, []);
+    const params = new URLSearchParams();
+    if (cabangFilter) params.set("cabangId", cabangFilter);
+    window.open(`/api/export/transactions?${params}`, "_blank");
+  }, [cabangFilter]);
 
   if (isLoading) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Memuat...</div>;
 
