@@ -28,15 +28,22 @@ jobs:
           unzip -q /tmp/gradle.zip -d /tmp/gradle
           /tmp/gradle/gradle-8.5/bin/gradle wrapper --gradle-version 8.5
 
-      - name: Build debug APK
-        run: cd android && ./gradlew assembleDebug
+      - name: Decode keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/kasir-app.keystore
+
+      - name: Build release APK
+        run: cd android && ./gradlew assembleRelease
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Rename APK with version
         run: |
-          mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/kasir-app-v1.1.0-debug.apk
+          mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/kasir-app-v1.0.0-release.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: kasir-app-debug
-          path: android/app/build/outputs/apk/debug/*.apk
+          name: kasir-app-release
+          path: android/app/build/outputs/apk/release/*.apk
