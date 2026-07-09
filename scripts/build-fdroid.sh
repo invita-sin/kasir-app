@@ -11,11 +11,22 @@ cp "$APK_PATH" "$OUTPUT_DIR/$APK_FILE"
 APK_SIZE=$(stat -c%s "$APK_PATH")
 APK_SHA256=$(sha256sum "$APK_PATH" | cut -d' ' -f1)
 
-# Extract APK info using aapt if available, otherwise use defaults
 VERSION_CODE="${3:-1}"
 VERSION_NAME="${4:-1.0.0}"
 MIN_SDK="${5:-24}"
 TARGET_SDK="${6:-34}"
+
+# Extract APK signature fingerprint
+APK_SIG=""
+if command -v unzip &>/dev/null; then
+  SIG_FILE=$(unzip -l "$APK_PATH" 2>/dev/null | grep -oE 'META-INF/[A-Z]+\.(RSA|EC|DSA)' | head -1)
+  if [ -n "$SIG_FILE" ]; then
+    APK_SIG=$(unzip -p "$APK_PATH" "$SIG_FILE" 2>/dev/null | openssl pkcs7 -inform DER -print_certs 2>/dev/null | openssl x509 -fingerprint -sha256 -noout 2>/dev/null | cut -d= -f2 | tr -d ':')
+  fi
+fi
+
+# Export raw public key (base64-encoded binary, no armor)
+RAW_PUBKEY=$(gpg --export "Kasir App" 2>/dev/null | base64 -w0)
 
 # Generate index.xml
 TIMESTAMP=$(date -u +%s)000
@@ -26,7 +37,7 @@ cat > /tmp/index.xml << EOF
 <fdroid>
   <repo icon="icon.png"
         name="Kasir App Repository"
-        pubkey="$(gpg --export --armor 'Kasir App' | grep -v '^---' | tr -d '\n')"
+        pubkey="$RAW_PUBKEY"
         timestamp="$TIMESTAMP"
         version="18">
     <description>Private F-Droid repository for Kasir App - POS &amp; Inventory Management</description>
@@ -45,7 +56,7 @@ cat > /tmp/index.xml << EOF
     <source>https://github.com/invita-sin/kasir-app</source>
     <trackid>com.kasir.app</trackid>
   </application>
-  <package>
+  <package versioncode="$VERSION_CODE" versionname="$VERSION_NAME">
     <versioncode>$VERSION_CODE</versioncode>
     <versionname>$VERSION_NAME</versionname>
     <apkname>$APK_FILE</apkname>
@@ -54,6 +65,7 @@ cat > /tmp/index.xml << EOF
     <sdkver>$MIN_SDK</sdkver>
     <targetSdkVersion>$TARGET_SDK</targetSdkVersion>
     <added>$DATE</added>
+    <sig>$APK_SIG</sig>
     <permissions>INTERNET,ACCESS_NETWORK_STATE</permissions>
   </package>
 </fdroid>
@@ -63,10 +75,10 @@ EOF
 cd /tmp
 zip -0 -q "$OUTPUT_DIR/index.jar" index.xml
 
-# GPG sign index.jar
+# GPG sign index.jar (binary detached signature)
 gpg --batch --yes --detach-sign --output "$OUTPUT_DIR/index.jar.sig" "$OUTPUT_DIR/index.jar"
 
-# Generate simple index.html for browser access
+# Generate index.html
 cat > "$OUTPUT_DIR/index.html" << EOF
 <!DOCTYPE html>
 <html>
@@ -79,6 +91,8 @@ a{color:#2563eb}pre{background:#f5f5f5;padding:10px;overflow-x:auto}</style>
 <h2>Kasir App F-Droid Repo</h2>
 <p>Tambah repo ini di aplikasi F-Droid:</p>
 <pre><code>https://invita-sin.github.io/kasir-app/fdroid/repo/</code></pre>
+<h3>Fingerprint GPG</h3>
+<pre><code>2789C1B3892C4DBE1DFBFE1E9DA5A61B69C87CB2</code></pre>
 <hr>
 <h3>APK</h3>
 <ul>
