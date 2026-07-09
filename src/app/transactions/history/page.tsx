@@ -94,10 +94,24 @@ export default function TransactionHistory() {
 
   const canVoid = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async () => {
     const params = new URLSearchParams();
     if (cabangFilter) params.set("cabangId", cabangFilter);
-    window.open(`/api/export/transactions?${params}`, "_blank");
+    try {
+      const res = await fetch(`/api/export/transactions?${params}`);
+      if (!res.ok) throw new Error("Gagal export");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `transactions_${new Date().toISOString().split("T")[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Gagal mendownload file");
+    }
   }, [cabangFilter]);
 
   if (isLoading) return <div className="text-center py-8 text-gray-500 dark:text-gray-400">Memuat...</div>;
