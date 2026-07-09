@@ -50,19 +50,39 @@ jobs:
       - name: Setup GPG for F-Droid
         run: |
           echo "${{ secrets.FDROID_GPG_KEY }}" | base64 -d | gpg --batch --import 2>&1
-          echo "=== GPG keys after import ==="
-          gpg --list-keys 2>&1
-          mkdir -p public/fdroid/repo
+          echo "GPG fingerprint:"
+          gpg --fingerprint "Kasir App" 2>&1
 
-      - name: Generate F-Droid repo
+      - name: Setup fdroidserver
         run: |
-          bash -x scripts/build-fdroid.sh \
-            android/app/build/outputs/apk/release/kasir-app-v1.0.0-release.apk \
-            public/fdroid/repo \
-            1 1.0.0 24 34
+          pip install fdroidserver 2>&1 | tail -5
+          # Init minimal fdroid repo config
+          mkdir -p public/fdroid/repo
+          cat > public/fdroid/config.yml << 'EOF'
+          repo_url: https://invita-sin.github.io/kasir-app/fdroid/repo
+          repo_name: Kasir App Repository
+          repo_description: Private F-Droid repository for Kasir App
+          repo_type: a-repo
+          keystore: ../../android/kasir-app.keystore
+          repo_keyalias: kasir-app
+          sign_key: ../../android/kasir-app.keystore
+          EOF
+
+      - name: Copy APK to fdroid repo
+        run: |
+          cp android/app/build/outputs/apk/release/kasir-app-v1.0.0-release.apk public/fdroid/repo/
+
+      - name: Generate F-Droid repo index
+        run: |
+          cd public/fdroid
+          fdroid update --create-metadata --pretty 2>&1
         env:
           GPG_TTY: /dev/null
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+
+      - name: Show generated repo files
+        run: ls -la public/fdroid/repo/
 
       - name: Deploy F-Droid repo to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
