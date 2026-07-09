@@ -16,17 +16,21 @@ VERSION_NAME="${4:-1.0.0}"
 MIN_SDK="${5:-24}"
 TARGET_SDK="${6:-34}"
 
-# Extract APK signature fingerprint
+# Extract APK signature fingerprint (non-fatal)
 APK_SIG=""
-if command -v unzip &>/dev/null; then
-  SIG_FILE=$(unzip -l "$APK_PATH" 2>/dev/null | grep -oE 'META-INF/[A-Z]+\.(RSA|EC|DSA)' | head -1)
+if command -v unzip &>/dev/null && command -v openssl &>/dev/null; then
+  SIG_FILE=$(unzip -l "$APK_PATH" 2>/dev/null | grep -oE 'META-INF/[A-Z]+\.(RSA|EC|DSA)' | head -1) || true
   if [ -n "$SIG_FILE" ]; then
-    APK_SIG=$(unzip -p "$APK_PATH" "$SIG_FILE" 2>/dev/null | openssl pkcs7 -inform DER -print_certs 2>/dev/null | openssl x509 -fingerprint -sha256 -noout 2>/dev/null | cut -d= -f2 | tr -d ':')
+    APK_SIG=$(unzip -p "$APK_PATH" "$SIG_FILE" 2>/dev/null | openssl pkcs7 -inform DER -print_certs 2>/dev/null | openssl x509 -fingerprint -sha256 -noout 2>/dev/null | cut -d= -f2 | tr -d ':') || true
   fi
 fi
 
 # Export raw public key (base64-encoded binary, no armor)
 RAW_PUBKEY=$(gpg --export "Kasir App" 2>/dev/null | base64 -w0)
+if [ -z "$RAW_PUBKEY" ]; then
+  echo "WARNING: GPG key not found. Trying to list keys..."
+  gpg --list-keys || true
+fi
 
 # Generate index.xml
 TIMESTAMP=$(date -u +%s)000
@@ -106,3 +110,4 @@ EOF
 
 rm -f /tmp/index.xml
 echo "F-Droid repo generated at: $OUTPUT_DIR"
+ls -la "$OUTPUT_DIR/"

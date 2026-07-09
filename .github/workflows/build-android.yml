@@ -49,12 +49,14 @@ jobs:
 
       - name: Setup GPG for F-Droid
         run: |
-          echo "${{ secrets.FDROID_GPG_KEY }}" | base64 -d | gpg --batch --import
+          echo "${{ secrets.FDROID_GPG_KEY }}" | base64 -d | gpg --batch --import 2>&1
+          echo "=== GPG keys after import ==="
+          gpg --list-keys 2>&1
           mkdir -p public/fdroid/repo
 
       - name: Generate F-Droid repo
         run: |
-          bash scripts/build-fdroid.sh \
+          bash -x scripts/build-fdroid.sh \
             android/app/build/outputs/apk/release/kasir-app-v1.0.0-release.apk \
             public/fdroid/repo \
             1 1.0.0 24 34
