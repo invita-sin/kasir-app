@@ -53,33 +53,22 @@ jobs:
           echo "GPG fingerprint:"
           gpg --fingerprint "Kasir App" 2>&1
 
-      - name: Setup fdroidserver
+      - name: Setup F-Droid repo
         run: |
-          pip install fdroidserver 2>&1 | tail -5
-          mkdir -p public/fdroid/repo public/fdroid/metadata
-          cat > public/fdroid/config.yml << EOF
-          repo_url: https://invita-sin.github.io/kasir-app/fdroid/repo
-          repo_name: Kasir App Repository
-          repo_description: Private F-Droid repository for Kasir App
-          repo_type: a-repo
-          keystore: ../../android/kasir-app.keystore
-          repo_keyalias: kasir-app
-          keystorepass: ${KEYSTORE_PASS}
-          keypass: ${KEY_PASSWORD}
-          EOF
-
-      - name: Copy APK to fdroid repo
-        run: |
+          mkdir -p public/fdroid/repo
           cp android/app/build/outputs/apk/release/kasir-app-v1.0.0-release.apk public/fdroid/repo/
 
-      - name: Generate F-Droid repo index
+      - name: Generate F-Droid repo index (Python)
         run: |
-          cd public/fdroid
-          fdroid update --create-metadata --pretty 2>&1
+          python3 scripts/build-fdroid.py \
+            public/fdroid/repo/kasir-app-v1.0.0-release.apk \
+            public/fdroid/repo \
+            --version-code 1 --version-name 1.0.0 \
+            --min-sdk 24 --target-sdk 34 \
+            --gpg-key "Kasir App" \
+            --repo-url "https://invita-sin.github.io/kasir-app/fdroid/repo"
         env:
           GPG_TTY: /dev/null
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
 
       - name: Show generated repo files
         run: ls -la public/fdroid/repo/
