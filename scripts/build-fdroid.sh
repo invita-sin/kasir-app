@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APK_PATH="${1:?Usage: build-fdroid.sh <apk-path> [output-dir]}"
-OUTPUT_DIR="${2:-public/fdroid/repo}"
+OUTPUT_DIR="$(realpath "${2:-public/fdroid/repo}")"
 mkdir -p "$OUTPUT_DIR"
 
 APK_FILE=$(basename "$APK_PATH")
