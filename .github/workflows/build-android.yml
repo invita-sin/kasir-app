@@ -47,28 +47,40 @@ jobs:
         run: |
           mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/kasir-app-v1.0.0-release.apk
 
-      - name: Setup GPG for F-Droid
+      - name: Extract keystore cert hex for F-Droid
+        id: cert
         run: |
-          echo "${{ secrets.FDROID_GPG_KEY }}" | base64 -d | gpg --batch --import 2>&1
-          echo "GPG fingerprint:"
-          gpg --fingerprint "Kasir App" 2>&1
+          CERT_HEX=$(keytool -exportcert -alias "${{ secrets.KEY_ALIAS }}" \
+            -keystore android/kasir-app.keystore \
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" 2>/dev/null | \
+            xxd -p | tr -d '\n')
+          echo "cert_hex=$CERT_HEX" >> "$GITHUB_OUTPUT"
+          echo "F-Droid pubkey hex: ${#CERT_HEX} chars"
 
       - name: Setup F-Droid repo
         run: |
           mkdir -p public/fdroid/repo
           cp android/app/build/outputs/apk/release/kasir-app-v1.0.0-release.apk public/fdroid/repo/
 
-      - name: Generate F-Droid repo index (Python)
+      - name: Generate unsigned F-Droid index.jar
         run: |
           python3 scripts/build-fdroid.py \
             public/fdroid/repo/kasir-app-v1.0.0-release.apk \
             public/fdroid/repo \
             --version-code 1 --version-name 1.0.0 \
             --min-sdk 24 --target-sdk 34 \
-            --gpg-key "Kasir App" \
+            --pubkey-hex "${{ steps.cert.outputs.cert_hex }}" \
             --repo-url "https://invita-sin.github.io/kasir-app/fdroid/repo"
-        env:
-          GPG_TTY: /dev/null
+
+      - name: Sign index.jar with JAR signing
+        run: |
+          jarsigner -keystore android/kasir-app.keystore \
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+            -keypass "${{ secrets.KEY_PASSWORD }}" \
+            -sigalg SHA256withRSA -digestalg SHA-256 \
+            public/fdroid/repo/index.jar \
+            "${{ secrets.KEY_ALIAS }}"
+          echo "JAR signing OK"
 
       - name: Show generated repo files
         run: ls -la public/fdroid/repo/
