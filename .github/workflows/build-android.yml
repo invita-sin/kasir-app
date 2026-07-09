@@ -56,16 +56,16 @@ jobs:
       - name: Setup fdroidserver
         run: |
           pip install fdroidserver 2>&1 | tail -5
-          # Init minimal fdroid repo config
-          mkdir -p public/fdroid/repo
-          cat > public/fdroid/config.yml << 'EOF'
+          mkdir -p public/fdroid/repo public/fdroid/metadata
+          cat > public/fdroid/config.yml << EOF
           repo_url: https://invita-sin.github.io/kasir-app/fdroid/repo
           repo_name: Kasir App Repository
           repo_description: Private F-Droid repository for Kasir App
           repo_type: a-repo
           keystore: ../../android/kasir-app.keystore
           repo_keyalias: kasir-app
-          sign_key: ../../android/kasir-app.keystore
+          keystorepass: ${KEYSTORE_PASS}
+          keypass: ${KEY_PASSWORD}
           EOF
 
       - name: Copy APK to fdroid repo
@@ -88,9 +88,9 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public/fdroid
+          publish_dir: ./public/fdroid/repo
           publish_branch: gh-pages
-          destination_dir: fdroid
+          destination_dir: fdroid/repo
           keep_files: false
 
       - name: Upload APK artifact
