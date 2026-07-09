@@ -10,9 +10,13 @@ export const GET = withApiHandler(async (req: NextRequest) => {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { searchParams } = new URL(req.url);
+  const queryCabangId = user.role === "SUPER_ADMIN" ? (searchParams.get("cabangId") || undefined) : undefined;
+
   const where: any = { status: "active" };
-  if (user.cabangId) {
-    where.items = { some: { product: { cabangId: user.cabangId } } };
+  const filterCabangId = queryCabangId || user.cabangId;
+  if (filterCabangId) {
+    where.items = { some: { product: { cabangId: filterCabangId } } };
   }
 
   const sales = await prisma.sale.findMany({
