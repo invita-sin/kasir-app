@@ -78,6 +78,9 @@ def build_index_xml(
         if tag == "hash":
             el.set("type", "sha256")
 
+    perm_el = ET.SubElement(pkg, "permissions")
+    perm_el.text = "INTERNET,ACCESS_NETWORK_STATE"
+
     ET.indent(root)
     return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
@@ -106,7 +109,7 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
 
     apk_info = get_apk_info(args.apk_path)
-    timestamp = int(time.time() * 1000)
+    timestamp = int(time.time())
 
     xml_content = build_index_xml(
         apk_name=Path(args.apk_path).name,
