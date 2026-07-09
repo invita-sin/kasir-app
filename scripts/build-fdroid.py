@@ -84,6 +84,8 @@ def build_index_xml(
     repo.set("pubkey", pubkey)
     repo.set("timestamp", str(timestamp))
     repo.set("version", "18")
+    repo.set("url", repo_url)
+    repo.set("maxage", "7")
     desc = ET.SubElement(repo, "description")
     desc.text = "Private F-Droid repository for Kasir App - POS & Inventory Management"
 
@@ -95,6 +97,7 @@ def build_index_xml(
         ("lastupdated", date),
         ("name", "Kasir App"),
         ("summary", "POS & Inventory Management"),
+        ("icon", "com.kasir.app.1.png"),
         ("desc", "Aplikasi kasir dan manajemen inventori multi-cabang dengan dukungan offline."),
         ("categories", "Business"),
         ("license", "Proprietary"),
@@ -106,7 +109,7 @@ def build_index_xml(
         el = ET.SubElement(app, tag)
         el.text = text
 
-    pkg = ET.SubElement(root, "package")
+    pkg = ET.SubElement(app, "package")
     pkg.set("versioncode", version_code)
     pkg.set("versionname", version_name)
     for tag, text in [
