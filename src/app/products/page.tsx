@@ -83,9 +83,7 @@ export default function Products() {
           <table className="w-full bg-white rounded-xl shadow-sm border border-gray-100 min-w-[640px] dark:bg-gray-800 dark:border-gray-700">
             <thead>
               <tr className="border-b border-gray-100 text-left text-sm text-gray-500 dark:text-gray-400">
-                <th className="py-3 px-4 font-medium">Nama</th>
-                <th className="py-3 px-4 font-medium">SKU</th>
-                <th className="py-3 px-4 font-medium">Kategori</th>
+                <th className="py-3 px-4 font-medium">Produk</th>
                 <th className="py-3 px-4 font-medium">Harga Jual</th>
                 <th className="py-3 px-4 font-medium">Modal</th>
                 <th className="py-3 px-4 font-medium">Stok</th>
@@ -97,16 +95,23 @@ export default function Products() {
             <tbody>
               {products.map((product) => (
                 <tr key={product.id} className="border-b border-gray-50 hover:bg-gray-50/50 dark:border-gray-700 dark:hover:bg-gray-700/50">
-                  <td className="py-3 px-4 text-sm font-medium text-gray-800 dark:text-gray-100">
+                  <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
-                      {product.name}
+                      <span className="text-sm font-medium text-gray-800 dark:text-gray-100">{product.name}</span>
                       {product.stock <= product.minStock && (
                         <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
                       )}
                     </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-gray-400 dark:text-gray-500">{product.sku}</span>
+                      {product.category && (
+                        <>
+                          <span className="text-xs text-gray-300 dark:text-gray-600">•</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500">{product.category.name}</span>
+                        </>
+                      )}
+                    </div>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">{product.sku}</td>
-                  <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">{product.category?.name || "-"}</td>
                   <td className="py-3 px-4 text-sm font-semibold text-gray-800 dark:text-gray-100">
                     {formatRupiah(product.price)}
                   </td>
