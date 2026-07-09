@@ -16,13 +16,12 @@ VERSION_NAME="${4:-1.0.0}"
 MIN_SDK="${5:-24}"
 TARGET_SDK="${6:-34}"
 
-# Extract APK signature fingerprint (non-fatal)
+# Extract APK signing certificate SHA-256 fingerprint
 APK_SIG=""
-if command -v unzip &>/dev/null && command -v openssl &>/dev/null; then
-  SIG_FILE=$(unzip -l "$APK_PATH" 2>/dev/null | grep -oE 'META-INF/[A-Z]+\.(RSA|EC|DSA)' | head -1) || true
-  if [ -n "$SIG_FILE" ]; then
-    APK_SIG=$(unzip -p "$APK_PATH" "$SIG_FILE" 2>/dev/null | openssl pkcs7 -inform DER -print_certs 2>/dev/null | openssl x509 -fingerprint -sha256 -noout 2>/dev/null | cut -d= -f2 | tr -d ':') || true
-  fi
+KEY_PASSWORD="${KEY_PASSWORD:-kasir123456}"
+KEY_FILE="android/kasir-app.keystore"
+if [ -f "$KEY_FILE" ] && command -v keytool &>/dev/null; then
+  APK_SIG=$(keytool -exportcert -alias kasir-app -keystore "$KEY_FILE" -storepass "$KEY_PASSWORD" 2>/dev/null | openssl x509 -fingerprint -sha256 -noout 2>/dev/null | cut -d= -f2 | tr -d ':') || true
 fi
 
 # Export raw public key (base64-encoded binary, no armor)

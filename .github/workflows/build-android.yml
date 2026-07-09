@@ -62,6 +62,7 @@ jobs:
             1 1.0.0 24 34
         env:
           GPG_TTY: /dev/null
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Deploy F-Droid repo to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
