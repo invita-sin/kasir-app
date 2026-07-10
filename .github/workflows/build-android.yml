@@ -62,7 +62,7 @@ jobs:
           mkdir -p public/fdroid/repo
           cp android/app/build/outputs/apk/release/kasir-app-v1.0.0-release.apk public/fdroid/repo/
 
-      - name: Generate unsigned F-Droid index.jar
+      - name: Generate unsigned F-Droid V1 index (JSON)
         run: |
           python3 scripts/build-fdroid.py \
             public/fdroid/repo/kasir-app-v1.0.0-release.apk \
@@ -72,13 +72,13 @@ jobs:
             --pubkey-hex "${{ steps.cert.outputs.cert_hex }}" \
             --repo-url "https://invita-sin.github.io/kasir-app/fdroid/repo"
 
-      - name: Sign index.jar with JAR signing
+      - name: Sign index-v1.jar with JAR signing
         run: |
           jarsigner -keystore android/kasir-app.keystore \
             -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
             -keypass "${{ secrets.KEY_PASSWORD }}" \
             -sigalg SHA256withRSA -digestalg SHA-256 \
-            public/fdroid/repo/index.jar \
+            public/fdroid/repo/index-v1.jar \
             "${{ secrets.KEY_ALIAS }}"
           echo "JAR signing OK"
 
