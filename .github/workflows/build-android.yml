@@ -77,7 +77,7 @@ jobs:
           jarsigner -keystore android/kasir-app.keystore \
             -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
             -keypass "${{ secrets.KEY_PASSWORD }}" \
-            -sigalg SHA256withRSA -digestalg SHA-256 \
+            -sigalg SHA1withRSA -digestalg SHA1 \
             public/fdroid/repo/index-v1.jar \
             "${{ secrets.KEY_ALIAS }}"
           echo "JAR signing OK"
