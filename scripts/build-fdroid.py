@@ -135,10 +135,9 @@ def build_index_json(
                     "minSdkVersion": min_sdk,
                     "targetSdkVersion": target_sdk,
                     "added": int(time.time() * 1000),
-                    "sig": "",
                     "uses-permission": [
-                        ["INTERNET"],
-                        ["ACCESS_NETWORK_STATE"],
+                        ["android.permission.INTERNET", None],
+                        ["android.permission.ACCESS_NETWORK_STATE", None],
                     ],
                 }
             ]
